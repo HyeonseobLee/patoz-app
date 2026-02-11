@@ -9,5 +9,8 @@ export type RootTabParamList = {
     symptoms: string;
   };
   MaintenanceHistory: undefined;
+  MaintenanceDetail: {
+    historyId: string;
+  };
   RepairStatus: undefined;
 };

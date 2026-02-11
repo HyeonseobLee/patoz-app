@@ -54,11 +54,20 @@ export function AppProvider({ children }: AppProviderProps) {
       return;
     }
 
+    const targetDeviceId = selectedDeviceId ?? devices[0]?.id;
+
+    if (!targetDeviceId) {
+      return;
+    }
+
     const newItem: HistoryItem = {
       id: `${Date.now()}`,
-      date: toIsoDate(new Date()),
-      title: '정비 접수',
-      center: 'PATOZ Service (Auto)',
+      deviceId: targetDeviceId,
+      receivedDate: toIsoDate(new Date()),
+      completedDate: null,
+      status: '접수 완료',
+      description: intake.trim() || '정비 접수',
+      notes: symptoms.trim() || '기타 메모 없음',
     };
 
     setHistory((prev) => [newItem, ...prev]);

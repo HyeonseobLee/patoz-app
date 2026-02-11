@@ -1,5 +1,6 @@
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import React, { useMemo, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -15,6 +16,14 @@ type IssueOption = (typeof issueOptions)[number];
 export default function RepairFlowScreen({ navigation }: Props) {
   const [selectedIssues, setSelectedIssues] = useState<IssueOption[]>([]);
   const [etcDetail, setEtcDetail] = useState('');
+  const [, setRefreshKey] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      setRefreshKey((prev) => prev + 1);
+      return () => {};
+    }, [])
+  );
 
   const hasEtcSelected = useMemo(() => selectedIssues.includes('기타'), [selectedIssues]);
 

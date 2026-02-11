@@ -1,5 +1,6 @@
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import React, { useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useCallback, useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,6 +14,14 @@ export default function HomeScreen({ navigation }: Props) {
   const { devices, selectedDeviceId, addDevice, setSelectedDeviceId, moveDeviceUp, moveDeviceDown } = useAppContext();
   const [serialNumber, setSerialNumber] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
+  const [, setRefreshKey] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      setRefreshKey((prev) => prev + 1);
+      return () => {};
+    }, [])
+  );
 
   const handleRegister = () => {
     const trimmedSerial = serialNumber.trim();
