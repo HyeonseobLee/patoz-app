@@ -60,35 +60,42 @@ export default function MaintenanceHistoryScreen({ navigation, route }: Props) {
 
   const renderItem = ({ item }: { item: HistoryItem }) => {
     const statusStyle = getStatusStyle(item.status);
+    const completedDateText = item.completedDate ? item.completedDate : '진행 중';
 
     return (
       <Pressable
         onPress={() => navigation.navigate('MaintenanceDetail', { historyId: item.id })}
         style={[ui.card, styles.card]}
       >
-        <View style={styles.topRow}>          <Text style={styles.itemTitle}>정비 내역</Text>
-          <View style={[styles.statusBadge, { backgroundColor: statusStyle.badgeBg }]}>            <Text style={[styles.statusText, { color: statusStyle.textColor }]}>{item.status}</Text>
+        <View style={styles.topRow}>
+          <Text style={styles.itemTitle}>정비 내역</Text>
+          <View style={[styles.statusBadge, { backgroundColor: statusStyle.badgeBg }]}>
+            <Text style={[styles.statusText, { color: statusStyle.textColor }]}>{item.status}</Text>
           </View>
         </View>
 
-        <View style={styles.metaRow}>          <Text style={styles.metaLabel}>접수</Text>
+        <View style={styles.metaRow}>
+          <Text style={styles.metaLabel}>접수</Text>
           <Text style={styles.metaValue}>{item.receivedDate}</Text>
         </View>
-        <View style={styles.metaRow}>          <Text style={styles.metaLabel}>완료</Text>
-          <Text style={styles.metaValue}>{item.completedDate ?? '진행 중'}</Text>
+        <View style={styles.metaRow}>
+          <Text style={styles.metaLabel}>완료</Text>
+          <Text style={styles.metaValue}>{completedDateText}</Text>
         </View>
       </Pressable>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container}>      <Text style={styles.pageTitle}>정비 이력</Text>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.pageTitle}>정비 이력</Text>
       <FlatList
         contentContainerStyle={styles.list}
         data={sortedHistory}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={
-          <View style={styles.emptyStateCard}>            <Text style={styles.emptyTitle}>선택한 기기의 정비 이력이 없습니다.</Text>
+          <View style={styles.emptyStateCard}>
+            <Text style={styles.emptyTitle}>선택한 기기의 정비 이력이 없습니다.</Text>
             <Text style={styles.emptyDescription}>새 정비 접수를 진행하면 이곳에 표시됩니다.</Text>
           </View>
         }
