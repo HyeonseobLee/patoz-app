@@ -37,7 +37,9 @@ export default function DeviceDashboardScreen({ navigation, route }: Props) {
   const fallbackDevice = devices.find((device) => device.id === route.params.deviceId) ?? selectedDevice;
 
   const canViewRepairStatus =
-    fallbackDevice?.serviceStatus === 'In-Repair' || fallbackDevice?.serviceStatus === 'Repair-Finished';
+    fallbackDevice?.serviceStatus === 'Registered' ||
+    fallbackDevice?.serviceStatus === 'In-Repair' ||
+    fallbackDevice?.serviceStatus === 'Repair-Finished';
 
   const onActionPress = (action: (typeof homeActions)[number]) => {
     if (action === 'AI 간편 진단') {

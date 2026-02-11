@@ -102,10 +102,14 @@ export default function HomeScreen({ navigation }: Props) {
   };
 
   const isRepairHighlighted = (status?: ServiceStatus | null) => {
-    return status === 'In-Repair' || status === 'Repair-Finished';
+    return status === 'Registered' || status === 'In-Repair' || status === 'Repair-Finished';
   };
 
   const getRepairBadgeLabel = (status?: ServiceStatus | null) => {
+    if (status === 'Registered') {
+      return '접수 완료 · 견적 대기';
+    }
+
     if (status === 'In-Repair') {
       return '수리 중';
     }
