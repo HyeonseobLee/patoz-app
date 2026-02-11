@@ -3,6 +3,7 @@ export type Device = {
   modelName: string;
   serialNumber: string;
   registeredYear: number;
+  imageUri?: string;
 };
 
 export type HistoryItem = {
@@ -27,7 +28,7 @@ export const tabLabels = {
   history: '정비 이력',
 };
 
-export const homeActions = ['정비 진단', '정비 이력', '도난 신고', '안전 가이드'] as const;
+export const homeActions = ['간단 점검', '정비 이력', '도난 신고', '안전 가이드'] as const;
 
 export const initialHistory: HistoryItem[] = [
   {

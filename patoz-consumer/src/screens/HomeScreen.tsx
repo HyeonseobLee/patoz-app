@@ -1,133 +1,109 @@
-import { Ionicons } from '@expo/vector-icons';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import React, { useMemo, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import AppHeader from '../components/AppHeader';
 import { useAppContext } from '../context/AppContext';
-import { homeActions } from '../data/mock';
 import { RootTabParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../styles/theme';
 
 type Props = BottomTabScreenProps<RootTabParamList, 'Home'>;
 
-const actionIcons: Record<(typeof homeActions)[number], keyof typeof Ionicons.glyphMap> = {
-  '정비 진단': 'construct-outline',
-  '정비 이력': 'document-text-outline',
-  '도난 신고': 'alert-circle-outline',
-  '안전 가이드': 'shield-checkmark-outline',
-};
-
 export default function HomeScreen({ navigation }: Props) {
-  const { devices, selectedDeviceId, addDevice } = useAppContext();
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const { devices, selectedDeviceId, addDevice, setSelectedDeviceId, moveDeviceUp, moveDeviceDown } = useAppContext();
   const [serialNumber, setSerialNumber] = useState('');
+  const [isEditMode, setIsEditMode] = useState(false);
 
-  const selectedDevice = useMemo(() => {
-    return devices.find((device) => device.id === selectedDeviceId) ?? null;
-  }, [devices, selectedDeviceId]);
-
-  const onActionPress = (action: (typeof homeActions)[number]) => {
-    if (action === '정비 진단') {
-      navigation.navigate('RepairFlow');
-      return;
-    }
-
-    if (action === '정비 이력') {
-      navigation.navigate('MaintenanceHistory');
-      return;
-    }
-
-    Alert.alert(action, '데모 화면입니다. 추후 기능이 연결됩니다.');
-  };
-
-  const onRegisterPress = () => {
+  const handleRegister = () => {
     const trimmedSerial = serialNumber.trim();
 
-    if (!trimmedSerial) {
-      Alert.alert('알림', 'Serial Number를 입력해주세요.');
+    if (trimmedSerial.length < 4) {
+      Alert.alert('등록 안내', '시리얼 넘버를 4자 이상 입력해주세요.');
       return;
     }
 
     addDevice(trimmedSerial);
     setSerialNumber('');
-    setIsModalVisible(false);
+  };
+
+  const handleCardPress = (deviceId: string) => {
+    setSelectedDeviceId(deviceId);
+
+    if (isEditMode) {
+      return;
+    }
+
+    navigation.navigate('DeviceDashboard', { deviceId });
   };
 
   return (
-    <>
-      <ScrollView contentContainerStyle={styles.content} style={styles.container}>
-        <AppHeader title="PATOZ" showDivider />
+    <ScrollView contentContainerStyle={styles.content} style={styles.container}>
+      <AppHeader title="PATOZ" showDivider />
 
-        {selectedDevice ? (
-          <View style={styles.deviceSection}>
-            <View style={styles.deviceCard}>
-              <Text style={styles.deviceName}>{selectedDevice.modelName}</Text>
-              <View style={styles.deviceRow}>
-                <Text style={styles.deviceLabel}>Serial Number</Text>
-                <Text style={styles.deviceValue}>{selectedDevice.serialNumber}</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.sectionTitle}>등록 기기 목록</Text>
+        <Pressable onPress={() => setIsEditMode((prev) => !prev)} style={styles.editToggleButton}>
+          <Text style={styles.editToggleText}>{isEditMode ? '편집 완료' : '순서 편집'}</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.registerCard}>
+        <TextInput
+          autoCapitalize="characters"
+          onChangeText={setSerialNumber}
+          placeholder="시리얼 넘버를 입력하세요"
+          placeholderTextColor="#94A3B8"
+          style={styles.input}
+          value={serialNumber}
+        />
+        <Pressable onPress={handleRegister} style={styles.registerButton}>
+          <Text style={styles.registerButtonText}>등록</Text>
+        </Pressable>
+        <Text style={styles.microcopy}>여러 대의 기기를 등록해 관리할 수 있어요.</Text>
+      </View>
+
+      {isEditMode ? <Text style={styles.editHint}>드래그 대신 버튼으로 순서를 변경할 수 있어요.</Text> : null}
+
+      {devices.length === 0 ? (
+        <View style={styles.emptyStateCard}>
+          <Text style={styles.emptyTitle}>등록된 PM 기기가 없습니다.</Text>
+          <Text style={styles.emptyDescription}>시리얼 넘버를 입력하고 첫 기기를 등록해보세요.</Text>
+        </View>
+      ) : (
+        <View style={styles.deviceList}>
+          {devices.map((device, index) => (
+            <Pressable key={device.id} onPress={() => handleCardPress(device.id)} style={styles.deviceCard}>
+              <View style={styles.imagePlaceholder} />
+              <View style={styles.cardBody}>
+                <Text style={styles.modelName}>{device.modelName}</Text>
+                <Text style={styles.infoText}>시리얼 넘버: {device.serialNumber}</Text>
+                <Text style={styles.infoText}>등록 연도: {device.registeredYear}</Text>
+                {selectedDeviceId === device.id ? <Text style={styles.selectedTag}>선택된 기기</Text> : null}
               </View>
-              <View style={styles.deviceRow}>
-                <Text style={styles.deviceLabel}>Registered Year</Text>
-                <Text style={styles.deviceValue}>{selectedDevice.registeredYear}</Text>
-              </View>
-            </View>
 
-            <Pressable onPress={() => setIsModalVisible(true)} style={styles.registerButton}>
-              <Ionicons color={colors.brand} name="add-circle-outline" size={20} style={styles.registerIcon} />
-              <Text style={styles.registerButtonText}>+ 제품 등록</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <View style={styles.emptyStateCard}>
-            <Ionicons color={colors.brand} name="bicycle-outline" size={32} />
-            <Text style={styles.emptyTitle}>등록된 PM 제품이 없습니다.</Text>
-            <Pressable onPress={() => setIsModalVisible(true)} style={styles.emptyRegisterButton}>
-              <Text style={styles.emptyRegisterButtonText}>+ 제품 등록</Text>
-            </Pressable>
-          </View>
-        )}
-
-        <View style={styles.actionList}>
-          {homeActions.map((action) => (
-            <Pressable key={action} onPress={() => onActionPress(action)} style={styles.actionButton}>
-              <Ionicons color={colors.brand} name={actionIcons[action]} size={22} style={styles.actionIcon} />
-              <Text style={styles.actionButtonText}>{action}</Text>
+              {isEditMode ? (
+                <View style={styles.orderButtons}>
+                  <Pressable
+                    disabled={index === 0}
+                    onPress={() => moveDeviceUp(device.id)}
+                    style={[styles.orderButton, index === 0 && styles.disabledOrderButton]}
+                  >
+                    <Text style={styles.orderButtonText}>위로</Text>
+                  </Pressable>
+                  <Pressable
+                    disabled={index === devices.length - 1}
+                    onPress={() => moveDeviceDown(device.id)}
+                    style={[styles.orderButton, index === devices.length - 1 && styles.disabledOrderButton]}
+                  >
+                    <Text style={styles.orderButtonText}>아래로</Text>
+                  </Pressable>
+                </View>
+              ) : null}
             </Pressable>
           ))}
         </View>
-      </ScrollView>
-
-      <Modal animationType="fade" transparent visible={isModalVisible}>
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>제품 등록</Text>
-            <TextInput
-              autoCapitalize="characters"
-              onChangeText={setSerialNumber}
-              placeholder="Serial Number"
-              placeholderTextColor="#94A3B8"
-              style={styles.modalInput}
-              value={serialNumber}
-            />
-            <View style={styles.modalButtons}>
-              <Pressable
-                onPress={() => {
-                  setIsModalVisible(false);
-                  setSerialNumber('');
-                }}
-                style={[styles.modalButton, styles.cancelButton]}
-              >
-                <Text style={styles.cancelButtonText}>취소</Text>
-              </Pressable>
-              <Pressable onPress={onRegisterPress} style={[styles.modalButton, styles.confirmButton]}>
-                <Text style={styles.confirmButtonText}>등록</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
-    </>
+      )}
+    </ScrollView>
   );
 }
 
@@ -137,184 +113,157 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    gap: spacing.lg,
+    gap: spacing.md,
     paddingBottom: spacing.xl,
   },
-  deviceSection: {
-    gap: spacing.md,
+  headerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginHorizontal: spacing.lg,
   },
-  deviceCard: {
-    backgroundColor: colors.navyCard,
-    borderRadius: radius.xl,
-    gap: spacing.sm,
-    padding: spacing.xl,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  deviceName: {
-    color: colors.white,
-    fontSize: 26,
-    fontWeight: '800',
-    marginBottom: spacing.sm,
-  },
-  deviceRow: {
-    gap: spacing.xs,
-  },
-  deviceLabel: {
-    color: '#94A3B8',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  deviceValue: {
-    color: colors.white,
+  sectionTitle: {
+    color: colors.textPrimary,
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
   },
-  registerButton: {
-    alignItems: 'center',
-    alignSelf: 'flex-start',
+  editToggleButton: {
     backgroundColor: colors.white,
     borderColor: colors.borderSoft,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     borderWidth: 1,
-    flexDirection: 'row',
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    paddingVertical: spacing.xs,
   },
-  registerIcon: {
-    marginRight: spacing.xs,
-  },
-  registerButtonText: {
+  editToggleText: {
     color: colors.brand,
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '700',
   },
-  emptyStateCard: {
-    alignItems: 'center',
+  registerCard: {
     backgroundColor: colors.white,
     borderColor: colors.borderSoft,
-    borderRadius: radius.xl,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    gap: spacing.md,
+    gap: spacing.sm,
     marginHorizontal: spacing.lg,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.xl,
+    padding: spacing.md,
     shadowColor: '#000',
     shadowOpacity: 0.04,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  emptyTitle: {
-    color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  emptyRegisterButton: {
-    backgroundColor: colors.brand,
-    borderRadius: radius.lg,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  emptyRegisterButtonText: {
-    color: colors.white,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  actionList: {
-    gap: spacing.md,
-    marginHorizontal: spacing.lg,
-  },
-  actionButton: {
-    alignItems: 'center',
-    backgroundColor: colors.white,
-    borderColor: colors.borderSoft,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 18,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  actionIcon: {
-    marginRight: spacing.md,
-  },
-  actionButtonText: {
-    color: colors.textPrimary,
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'left',
-  },
-  modalBackdrop: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.4)',
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-  },
-  modalCard: {
-    backgroundColor: colors.white,
-    borderRadius: radius.xl,
-    gap: spacing.md,
-    padding: spacing.xl,
-    width: '100%',
-  },
-  modalTitle: {
-    color: colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  modalInput: {
+  input: {
     backgroundColor: '#F8FAFC',
     borderColor: colors.borderSoft,
     borderRadius: radius.md,
     borderWidth: 1,
     color: colors.textPrimary,
-    fontSize: 16,
+    fontSize: 15,
     padding: spacing.md,
   },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    justifyContent: 'flex-end',
-    marginTop: spacing.sm,
-  },
-  modalButton: {
+  registerButton: {
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    backgroundColor: colors.brand,
     borderRadius: radius.md,
-    minWidth: 84,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
   },
-  cancelButton: {
-    backgroundColor: '#E2E8F0',
-  },
-  cancelButtonText: {
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  confirmButton: {
-    backgroundColor: colors.brand,
-  },
-  confirmButtonText: {
+  registerButtonText: {
     color: colors.white,
     fontSize: 14,
     fontWeight: '700',
-    textAlign: 'center',
+  },
+  microcopy: {
+    color: colors.textMuted,
+    fontSize: 13,
+  },
+  editHint: {
+    color: '#64748B',
+    fontSize: 12,
+    marginHorizontal: spacing.lg,
+  },
+  emptyStateCard: {
+    backgroundColor: colors.white,
+    borderColor: colors.borderSoft,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    gap: spacing.xs,
+    marginHorizontal: spacing.lg,
+    padding: spacing.xl,
+  },
+  emptyTitle: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  emptyDescription: {
+    color: colors.textMuted,
+    fontSize: 14,
+  },
+  deviceList: {
+    gap: spacing.md,
+    marginHorizontal: spacing.lg,
+  },
+  deviceCard: {
+    backgroundColor: colors.white,
+    borderColor: colors.borderSoft,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.md,
+    padding: spacing.md,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  imagePlaceholder: {
+    backgroundColor: '#E2E8F0',
+    borderRadius: radius.md,
+    height: 72,
+    width: 72,
+  },
+  cardBody: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  modelName: {
+    color: colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  infoText: {
+    color: colors.textMuted,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  selectedTag: {
+    color: colors.brand,
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: spacing.xs,
+  },
+  orderButtons: {
+    gap: spacing.xs,
+    justifyContent: 'center',
+  },
+  orderButton: {
+    alignItems: 'center',
+    backgroundColor: '#E2E8F0',
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+  },
+  disabledOrderButton: {
+    opacity: 0.5,
+  },
+  orderButtonText: {
+    color: colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '700',
   },
 });
