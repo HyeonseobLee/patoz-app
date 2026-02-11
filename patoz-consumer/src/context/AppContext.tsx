@@ -1,6 +1,6 @@
 import React, { createContext, ReactNode, useContext, useMemo, useState } from 'react';
 
-import { device, HistoryItem, initialHistory } from '../data/mock';
+import { Device, HistoryItem, initialDevices, initialHistory } from '../data/mock';
 
 type InquiryInput = {
   intake: string;
@@ -8,9 +8,11 @@ type InquiryInput = {
 };
 
 type AppContextValue = {
-  device: typeof device;
+  devices: Device[];
+  selectedDeviceId: string | null;
   history: HistoryItem[];
   addInquiry: (input: InquiryInput) => void;
+  addDevice: (serialNumber: string) => void;
 };
 
 const AppContext = createContext<AppContextValue | undefined>(undefined);
@@ -24,6 +26,8 @@ const toIsoDate = (date: Date): string => {
 };
 
 export function AppProvider({ children }: AppProviderProps) {
+  const [devices, setDevices] = useState<Device[]>(initialDevices);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(initialDevices[0]?.id ?? null);
   const [history, setHistory] = useState<HistoryItem[]>(initialHistory);
 
   const addInquiry = ({ intake, symptoms }: InquiryInput) => {
@@ -44,13 +48,33 @@ export function AppProvider({ children }: AppProviderProps) {
     setHistory((prev) => [newItem, ...prev]);
   };
 
+  const addDevice = (serialNumber: string) => {
+    const trimmedSerialNumber = serialNumber.trim();
+
+    if (!trimmedSerialNumber) {
+      return;
+    }
+
+    const newDevice: Device = {
+      id: Date.now().toString(),
+      modelName: 'EZ-BIKE S1',
+      serialNumber: trimmedSerialNumber,
+      registeredYear: 2024,
+    };
+
+    setDevices((prev) => [...prev, newDevice]);
+    setSelectedDeviceId(newDevice.id);
+  };
+
   const value = useMemo(
     () => ({
-      device,
+      devices,
+      selectedDeviceId,
       history,
       addInquiry,
+      addDevice,
     }),
-    [history]
+    [devices, selectedDeviceId, history]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

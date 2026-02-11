@@ -1,7 +1,8 @@
 export type Device = {
-  name: string;
-  serial: string;
-  year: string;
+  id: string;
+  modelName: string;
+  serialNumber: string;
+  registeredYear: number;
 };
 
 export type HistoryItem = {
@@ -11,15 +12,18 @@ export type HistoryItem = {
   center: string;
 };
 
-export const device: Device = {
-  name: 'EZ-BIKE S1',
-  serial: 'ST12345678',
-  year: '2024',
-};
+export const initialDevices: Device[] = [
+  {
+    id: '1',
+    modelName: 'EZ-BIKE S1',
+    serialNumber: 'ST12345678',
+    registeredYear: 2024,
+  },
+];
 
 export const tabLabels = {
   home: '홈',
-  repair: '수리 진행',
+  repair: '수리 접수',
   history: '정비 이력',
 };
 
