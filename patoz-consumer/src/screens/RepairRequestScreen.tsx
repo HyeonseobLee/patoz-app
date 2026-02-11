@@ -1,5 +1,6 @@
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import React from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useCallback, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,6 +13,14 @@ type Props = BottomTabScreenProps<RootTabParamList, 'RepairRequest'>;
 
 export default function RepairRequestScreen({ navigation, route }: Props) {
   const { addInquiry } = useAppContext();
+  const [, setRefreshKey] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      setRefreshKey((prev) => prev + 1);
+      return () => {};
+    }, [])
+  );
   const { intake, symptoms } = route.params;
 
   const handleConfirm = () => {

@@ -6,6 +6,7 @@ import React from 'react';
 import { tabLabels } from '../data/mock';
 import DeviceDashboardScreen from '../screens/DeviceDashboardScreen';
 import HomeScreen from '../screens/HomeScreen';
+import MaintenanceDetailScreen from '../screens/MaintenanceDetailScreen';
 import MaintenanceHistoryScreen from '../screens/MaintenanceHistoryScreen';
 import RepairFlowScreen from '../screens/RepairFlowScreen';
 import RepairRequestScreen from '../screens/RepairRequestScreen';
@@ -34,7 +35,7 @@ export default function AppNavigator() {
             paddingTop: 8,
             paddingBottom: 10,
             display:
-              route.name === 'RepairRequest' || route.name === 'DeviceDashboard' || route.name === 'RepairStatus'
+              route.name === 'RepairRequest' || route.name === 'DeviceDashboard' || route.name === 'RepairStatus' || route.name === 'MaintenanceDetail'
                 ? 'none'
                 : 'flex',
           },
@@ -50,6 +51,15 @@ export default function AppNavigator() {
           component={MaintenanceHistoryScreen}
           name="MaintenanceHistory"
           options={{ title: tabLabels.history }}
+        />
+
+        <Tab.Screen
+          component={MaintenanceDetailScreen}
+          name="MaintenanceDetail"
+          options={{
+            title: '정비 상세',
+            tabBarButton: () => null,
+          }}
         />
         <Tab.Screen
           component={RepairRequestScreen}

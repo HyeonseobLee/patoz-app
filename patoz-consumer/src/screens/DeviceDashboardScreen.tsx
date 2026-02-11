@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import React, { useEffect } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -20,6 +21,14 @@ const actionIcons: Record<(typeof homeActions)[number], keyof typeof Ionicons.gl
 
 export default function DeviceDashboardScreen({ navigation, route }: Props) {
   const { devices, selectedDevice, setSelectedDeviceId } = useAppContext();
+  const [, setRefreshKey] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      setRefreshKey((prev) => prev + 1);
+      return () => {};
+    }, [])
+  );
 
   useEffect(() => {
     setSelectedDeviceId(route.params.deviceId);

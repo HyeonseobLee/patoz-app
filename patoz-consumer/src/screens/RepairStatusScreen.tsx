@@ -1,5 +1,6 @@
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import React from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,6 +13,15 @@ const timelineSteps = ['접수 완료', '점검 중', '부품 준비', '수리 �
 const currentStep = '수리 진행 중';
 
 export default function RepairStatusScreen({ navigation }: Props) {
+  const [, setRefreshKey] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      setRefreshKey((prev) => prev + 1);
+      return () => {};
+    }, [])
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} style={styles.container}>
