@@ -1,8 +1,8 @@
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import React from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import AppHeader from '../components/AppHeader';
 import { useAppContext } from '../context/AppContext';
 import { RootTabParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../styles/theme';
@@ -21,19 +21,19 @@ export default function RepairRequestScreen({ navigation, route }: Props) {
   };
 
   return (
-    <View style={styles.container}>
-      <AppHeader title="수리 접수" showDivider />
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.pageTitle}>수리 접수</Text>
 
       <View style={[ui.card, styles.summaryCard]}>
         <Text style={styles.sectionTitle}>간단 점검 요약</Text>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>접수 내용</Text>
+          <Text style={styles.fieldLabel}>점검 항목</Text>
           <Text style={styles.fieldValue}>{intake.trim() || '-'}</Text>
         </View>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>증상 설명</Text>
+          <Text style={styles.fieldLabel}>기타 상세</Text>
           <Text style={styles.fieldValue}>{symptoms.trim() || '-'}</Text>
         </View>
 
@@ -41,7 +41,7 @@ export default function RepairRequestScreen({ navigation, route }: Props) {
           <Text style={styles.confirmButtonText}>수리 접수 완료</Text>
         </Pressable>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -50,6 +50,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     flex: 1,
     gap: spacing.lg,
+  },
+  pageTitle: {
+    color: colors.textPrimary,
+    fontSize: 22,
+    fontWeight: '800',
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
   },
   summaryCard: {
     gap: spacing.lg,

@@ -1,8 +1,8 @@
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import React, { useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import AppHeader from '../components/AppHeader';
 import { useAppContext } from '../context/AppContext';
 import { RootTabParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../styles/theme';
@@ -37,83 +37,84 @@ export default function HomeScreen({ navigation }: Props) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.container}>
-      <AppHeader title="PATOZ" showDivider />
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.content} style={styles.container}>
+        <Text style={styles.pageTitle}>내 기기</Text>
 
-      <View style={styles.headerRow}>
-        <Text style={styles.sectionTitle}>등록 기기 목록</Text>
-        <Pressable onPress={() => setIsEditMode((prev) => !prev)} style={styles.editToggleButton}>
-          <Text style={styles.editToggleText}>{isEditMode ? '편집 완료' : '순서 편집'}</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.registerCard}>
-        <TextInput
-          autoCapitalize="characters"
-          onChangeText={setSerialNumber}
-          placeholder="시리얼 넘버를 입력하세요"
-          placeholderTextColor="#94A3B8"
-          style={styles.input}
-          value={serialNumber}
-        />
-        <Pressable onPress={handleRegister} style={styles.registerButton}>
-          <Text style={styles.registerButtonText}>등록</Text>
-        </Pressable>
-        <Text style={styles.microcopy}>여러 대의 기기를 등록해 관리할 수 있어요.</Text>
-      </View>
-
-      {isEditMode ? <Text style={styles.editHint}>드래그 대신 버튼으로 순서를 변경할 수 있어요.</Text> : null}
-
-      {devices.length === 0 ? (
-        <View style={styles.emptyStateCard}>
-          <Text style={styles.emptyTitle}>등록된 PM 기기가 없습니다.</Text>
-          <Text style={styles.emptyDescription}>시리얼 넘버를 입력하고 첫 기기를 등록해보세요.</Text>
+        <View style={styles.registerCard}>
+          <View style={styles.registerRow}>
+            <TextInput
+              autoCapitalize="characters"
+              onChangeText={setSerialNumber}
+              placeholder="시리얼 넘버를 입력하세요"
+              placeholderTextColor="#94A3B8"
+              style={styles.input}
+              value={serialNumber}
+            />
+            <Pressable onPress={handleRegister} style={styles.registerButton}>
+              <Text style={styles.registerButtonText}>등록</Text>
+            </Pressable>
+          </View>
+          <Text style={styles.microcopy}>여러 대의 기기를 등록해 관리할 수 있어요.</Text>
         </View>
-      ) : (
-        <View style={styles.deviceList}>
-          {devices.map((device, index) => {
-            const isSelected = selectedDeviceId === device.id;
 
-            return (
-              <Pressable
-                key={device.id}
-                onPress={() => handleCardPress(device.id)}
-                style={[styles.deviceCard, isSelected && styles.selectedDeviceCard]}
-              >
-                {device.imageUri ? <Image source={{ uri: device.imageUri }} style={styles.deviceImage} /> : <View style={styles.imagePlaceholder} />}
-                <View style={styles.cardBody}>
-                  <Text style={styles.brandText}>{device.brand}</Text>
-                  <Text style={styles.modelName}>{device.modelName}</Text>
-                  <Text style={styles.infoText}>색상: {device.color}</Text>
-                  <Text style={styles.infoText}>시리얼 넘버: {device.serialNumber}</Text>
-                  <Text style={styles.infoText}>등록 연도: {device.registeredYear}</Text>
-                  {isSelected ? <Text style={styles.selectedTag}>선택된 기기</Text> : null}
-                </View>
+        <View style={styles.editSection}>
+          <Pressable onPress={() => setIsEditMode((prev) => !prev)} style={styles.editToggleButton}>
+            <Text style={styles.editToggleText}>{isEditMode ? '편집 완료' : '순서 편집'}</Text>
+          </Pressable>
+          {isEditMode ? <Text style={styles.editHint}>드래그 대신 버튼으로 순서를 변경할 수 있어요.</Text> : null}
+        </View>
 
-                {isEditMode ? (
-                  <View style={styles.orderButtons}>
-                    <Pressable
-                      disabled={index === 0}
-                      onPress={() => moveDeviceUp(device.id)}
-                      style={[styles.orderButton, index === 0 && styles.disabledOrderButton]}
-                    >
-                      <Text style={styles.orderButtonText}>위로</Text>
-                    </Pressable>
-                    <Pressable
-                      disabled={index === devices.length - 1}
-                      onPress={() => moveDeviceDown(device.id)}
-                      style={[styles.orderButton, index === devices.length - 1 && styles.disabledOrderButton]}
-                    >
-                      <Text style={styles.orderButtonText}>아래로</Text>
-                    </Pressable>
+        {devices.length === 0 ? (
+          <View style={styles.emptyStateCard}>
+            <Text style={styles.emptyTitle}>등록된 PM 기기가 없습니다.</Text>
+            <Text style={styles.emptyDescription}>시리얼 넘버를 입력하고 첫 기기를 등록해보세요.</Text>
+          </View>
+        ) : (
+          <View style={styles.deviceList}>
+            {devices.map((device, index) => {
+              const isSelected = selectedDeviceId === device.id;
+
+              return (
+                <Pressable
+                  key={device.id}
+                  onPress={() => handleCardPress(device.id)}
+                  style={[styles.deviceCard, isSelected && styles.selectedDeviceCard]}
+                >
+                  {device.imageUri ? <Image source={{ uri: device.imageUri }} style={styles.deviceImage} /> : <View style={styles.imagePlaceholder} />}
+                  <View style={styles.cardBody}>
+                    <Text style={styles.brandText}>{device.brand}</Text>
+                    <Text style={styles.modelName}>{device.modelName}</Text>
+                    <Text style={styles.infoText}>색상: {device.color}</Text>
+                    <Text style={styles.infoText}>시리얼 넘버: {device.serialNumber}</Text>
+                    <Text style={styles.infoText}>등록 연도: {device.registeredYear}</Text>
                   </View>
-                ) : null}
-              </Pressable>
-            );
-          })}
-        </View>
-      )}
-    </ScrollView>
+
+                  {isEditMode ? (
+                    <View style={styles.orderButtons}>
+                      <Pressable
+                        disabled={index === 0}
+                        onPress={() => moveDeviceUp(device.id)}
+                        style={[styles.orderButton, index === 0 && styles.disabledOrderButton]}
+                      >
+                        <Text style={styles.orderButtonText}>위로</Text>
+                      </Pressable>
+                      <Pressable
+                        disabled={index === devices.length - 1}
+                        onPress={() => moveDeviceDown(device.id)}
+                        style={[styles.orderButton, index === devices.length - 1 && styles.disabledOrderButton]}
+                      >
+                        <Text style={styles.orderButtonText}>아래로</Text>
+                      </Pressable>
+                    </View>
+                  ) : null}
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -126,18 +127,66 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingBottom: spacing.xl,
   },
-  headerRow: {
+  pageTitle: {
+    color: colors.textPrimary,
+    fontSize: 22,
+    fontWeight: '800',
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+  },
+  registerCard: {
+    backgroundColor: colors.white,
+    borderColor: colors.borderSoft,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    gap: spacing.xs,
+    marginHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  registerRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginHorizontal: spacing.lg,
+    gap: spacing.sm,
   },
-  sectionTitle: {
+  input: {
+    backgroundColor: '#F8FAFC',
+    borderColor: colors.borderSoft,
+    borderRadius: radius.md,
+    borderWidth: 1,
     color: colors.textPrimary,
-    fontSize: 18,
+    flex: 1,
+    fontSize: 14,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  registerButton: {
+    alignItems: 'center',
+    backgroundColor: colors.brand,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  registerButtonText: {
+    color: colors.white,
+    fontSize: 14,
     fontWeight: '700',
   },
+  microcopy: {
+    color: colors.textMuted,
+    fontSize: 12,
+  },
+  editSection: {
+    gap: spacing.xs,
+    marginHorizontal: spacing.lg,
+  },
   editToggleButton: {
+    alignSelf: 'flex-start',
     backgroundColor: colors.white,
     borderColor: colors.borderSoft,
     borderRadius: radius.md,
@@ -150,50 +199,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-  registerCard: {
-    backgroundColor: colors.white,
-    borderColor: colors.borderSoft,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    gap: spacing.sm,
-    marginHorizontal: spacing.lg,
-    padding: spacing.md,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  input: {
-    backgroundColor: '#F8FAFC',
-    borderColor: colors.borderSoft,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    color: colors.textPrimary,
-    fontSize: 15,
-    padding: spacing.md,
-  },
-  registerButton: {
-    alignItems: 'center',
-    alignSelf: 'flex-end',
-    backgroundColor: colors.brand,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  registerButtonText: {
-    color: colors.white,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  microcopy: {
-    color: colors.textMuted,
-    fontSize: 13,
-  },
   editHint: {
     color: '#64748B',
     fontSize: 12,
-    marginHorizontal: spacing.lg,
   },
   emptyStateCard: {
     backgroundColor: colors.white,
@@ -268,12 +276,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 14,
     fontWeight: '500',
-  },
-  selectedTag: {
-    color: colors.brand,
-    fontSize: 12,
-    fontWeight: '700',
-    marginTop: spacing.xs,
   },
   orderButtons: {
     gap: spacing.xs,

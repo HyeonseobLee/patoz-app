@@ -1,7 +1,7 @@
 import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import AppHeader from '../components/AppHeader';
 import { useAppContext } from '../context/AppContext';
 import { HistoryItem } from '../data/mock';
 import { colors, spacing } from '../styles/theme';
@@ -21,16 +21,10 @@ export default function MaintenanceHistoryScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <AppHeader title="정비 이력" showDivider />
-
-      <FlatList
-        contentContainerStyle={styles.list}
-        data={history}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-      />
-    </View>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.pageTitle}>정비 이력</Text>
+      <FlatList contentContainerStyle={styles.list} data={history} keyExtractor={(item) => item.id} renderItem={renderItem} />
+    </SafeAreaView>
   );
 }
 
@@ -38,6 +32,13 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.background,
     flex: 1,
+  },
+  pageTitle: {
+    color: colors.textPrimary,
+    fontSize: 22,
+    fontWeight: '800',
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
   },
   list: {
     gap: spacing.lg,

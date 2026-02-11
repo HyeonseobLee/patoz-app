@@ -2,8 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import React, { useEffect } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import AppHeader from '../components/AppHeader';
 import { useAppContext } from '../context/AppContext';
 import { homeActions } from '../data/mock';
 import { RootTabParamList } from '../navigation/types';
@@ -47,8 +47,8 @@ export default function DeviceDashboardScreen({ navigation, route }: Props) {
   const fallbackDevice = devices.find((device) => device.id === route.params.deviceId) ?? selectedDevice;
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.container}>
-      <AppHeader title="PATOZ" showDivider />
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.content} style={styles.container}>
 
       {fallbackDevice ? (
         <View style={styles.deviceSection}>
@@ -94,6 +94,7 @@ export default function DeviceDashboardScreen({ navigation, route }: Props) {
         ))}
       </View>
     </ScrollView>
+  </SafeAreaView>
   );
 }
 
@@ -105,6 +106,7 @@ const styles = StyleSheet.create({
   content: {
     gap: spacing.lg,
     paddingBottom: spacing.xl,
+    paddingTop: spacing.sm,
   },
   deviceSection: {
     marginHorizontal: spacing.lg,

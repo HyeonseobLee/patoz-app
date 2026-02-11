@@ -1,8 +1,8 @@
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import AppHeader from '../components/AppHeader';
 import { RootTabParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../styles/theme';
 
@@ -13,61 +13,63 @@ const currentStep = '수리 진행 중';
 
 export default function RepairStatusScreen({ navigation }: Props) {
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.container}>
-      <AppHeader title="수리 진행 현황" showDivider />
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.content} style={styles.container}>
+        <Text style={styles.pageTitle}>수리 진행 현황</Text>
 
-      <View style={styles.card}>
-        <Text style={styles.sectionLabel}>서비스 센터</Text>
-        <Text style={styles.sectionTitle}>PATOZ Service Seoul</Text>
+        <View style={styles.card}>
+          <Text style={styles.sectionLabel}>서비스 센터</Text>
+          <Text style={styles.sectionTitle}>PATOZ Service Seoul</Text>
 
-        <View style={styles.metaRow}>
-          <Text style={styles.metaLabel}>담당 기사</Text>
-          <Text style={styles.metaValue}>홍길동 기사</Text>
+          <View style={styles.metaRow}>
+            <Text style={styles.metaLabel}>담당 기사</Text>
+            <Text style={styles.metaValue}>홍길동 기사</Text>
+          </View>
+          <View style={styles.metaRow}>
+            <Text style={styles.metaLabel}>연락처</Text>
+            <Text style={styles.metaValue}>02-1234-5678</Text>
+          </View>
+
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{currentStep}</Text>
+          </View>
         </View>
-        <View style={styles.metaRow}>
-          <Text style={styles.metaLabel}>연락처</Text>
-          <Text style={styles.metaValue}>02-1234-5678</Text>
+
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>수리 타임라인</Text>
+          <View style={styles.timelineList}>
+            {timelineSteps.map((step, index) => {
+              const isActive = step === currentStep;
+
+              return (
+                <View key={step} style={styles.timelineRow}>
+                  <View style={[styles.timelineDot, isActive && styles.timelineDotActive]} />
+                  <Text style={[styles.timelineText, isActive && styles.timelineTextActive]}>
+                    {index + 1}. {step}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
         </View>
 
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{currentStep}</Text>
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>예상 수리 정보</Text>
+          <View style={styles.metaRow}>
+            <Text style={styles.metaLabel}>예상 수리 항목</Text>
+            <Text style={styles.metaValue}>후륜 브레이크 패드 교체</Text>
+          </View>
+          <View style={styles.metaRow}>
+            <Text style={styles.metaLabel}>예상 완료 시간</Text>
+            <Text style={styles.metaValue}>오늘 18:00</Text>
+          </View>
         </View>
-      </View>
 
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>수리 타임라인</Text>
-        <View style={styles.timelineList}>
-          {timelineSteps.map((step, index) => {
-            const isActive = step === currentStep;
-
-            return (
-              <View key={step} style={styles.timelineRow}>
-                <View style={[styles.timelineDot, isActive && styles.timelineDotActive]} />
-                <Text style={[styles.timelineText, isActive && styles.timelineTextActive]}>
-                  {index + 1}. {step}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>예상 수리 정보</Text>
-        <View style={styles.metaRow}>
-          <Text style={styles.metaLabel}>예상 수리 항목</Text>
-          <Text style={styles.metaValue}>후륜 브레이크 패드 교체</Text>
-        </View>
-        <View style={styles.metaRow}>
-          <Text style={styles.metaLabel}>예상 완료 시간</Text>
-          <Text style={styles.metaValue}>오늘 18:00</Text>
-        </View>
-      </View>
-
-      <Pressable onPress={() => navigation.goBack()} style={styles.confirmButton}>
-        <Text style={styles.confirmButtonText}>확인</Text>
-      </Pressable>
-    </ScrollView>
+        <Pressable onPress={() => navigation.goBack()} style={styles.confirmButton}>
+          <Text style={styles.confirmButtonText}>확인</Text>
+        </Pressable>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -79,6 +81,13 @@ const styles = StyleSheet.create({
   content: {
     gap: spacing.md,
     paddingBottom: spacing.xl,
+    paddingTop: spacing.sm,
+  },
+  pageTitle: {
+    color: colors.textPrimary,
+    fontSize: 22,
+    fontWeight: '800',
+    marginHorizontal: spacing.lg,
   },
   card: {
     backgroundColor: colors.white,
