@@ -1,13 +1,13 @@
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { useFocusEffect } from '@react-navigation/native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { RootStackParamList } from '../navigation/types';
+import { RootTabParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../styles/theme';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'RepairStatus'>;
+type Props = BottomTabScreenProps<RootTabParamList, 'RepairStatus'>;
 
 const timelineSteps = ['접수 완료', '점검 중', '부품 준비', '수리 진행 중', '완료 예정'] as const;
 const currentStep = '수리 진행 중';

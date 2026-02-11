@@ -1,15 +1,15 @@
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { useFocusEffect } from '@react-navigation/native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useCallback, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppContext } from '../context/AppContext';
-import { RootStackParamList } from '../navigation/types';
+import { RootTabParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../styles/theme';
 import { ui } from '../styles/ui';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'RepairRequest'>;
+type Props = BottomTabScreenProps<RootTabParamList, 'RepairRequest'>;
 
 export default function RepairRequestScreen({ navigation, route }: Props) {
   const { addInquiry } = useAppContext();
