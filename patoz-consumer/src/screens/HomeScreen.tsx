@@ -1,14 +1,22 @@
+import { Ionicons } from '@expo/vector-icons';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import React from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import AppHeader from '../components/AppHeader';
 import { useAppContext } from '../context/AppContext';
 import { homeActions } from '../data/mock';
 import { RootTabParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../styles/theme';
-import { ui } from '../styles/ui';
 
 type Props = BottomTabScreenProps<RootTabParamList, 'Home'>;
+
+const actionIcons: Record<(typeof homeActions)[number], keyof typeof Ionicons.glyphMap> = {
+  '정비 진단': 'construct-outline',
+  '정비 이력': 'document-text-outline',
+  '도난 신고': 'alert-circle-outline',
+  '안전 가이드': 'shield-checkmark-outline',
+};
 
 export default function HomeScreen({ navigation }: Props) {
   const { device } = useAppContext();
@@ -29,7 +37,7 @@ export default function HomeScreen({ navigation }: Props) {
 
   return (
     <ScrollView contentContainerStyle={styles.content} style={styles.container}>
-      <Text style={styles.brandText}>PATOZ</Text>
+      <AppHeader title="PATOZ" showDivider />
 
       <View style={styles.deviceCard}>
         <Text style={styles.deviceName}>{device.name}</Text>
@@ -45,8 +53,9 @@ export default function HomeScreen({ navigation }: Props) {
 
       <View style={styles.actionList}>
         {homeActions.map((action) => (
-          <Pressable key={action} onPress={() => onActionPress(action)} style={ui.outlineButton}>
-            <Text style={ui.outlineButtonText}>{action}</Text>
+          <Pressable key={action} onPress={() => onActionPress(action)} style={styles.actionButton}>
+            <Ionicons color={colors.brand} name={actionIcons[action]} size={22} style={styles.actionIcon} />
+            <Text style={styles.actionButtonText}>{action}</Text>
           </Pressable>
         ))}
       </View>
@@ -61,19 +70,19 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.lg,
-    padding: spacing.xl,
-  },
-  brandText: {
-    color: colors.brand,
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: 0.5,
+    paddingBottom: spacing.xl,
   },
   deviceCard: {
     backgroundColor: colors.navyCard,
     borderRadius: radius.xl,
     gap: spacing.sm,
+    marginHorizontal: spacing.lg,
     padding: spacing.xl,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
   deviceName: {
     color: colors.white,
@@ -85,16 +94,42 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   deviceLabel: {
-    color: '#CBD5E1',
-    fontSize: 13,
+    color: '#94A3B8',
+    fontSize: 12,
     fontWeight: '500',
   },
   deviceValue: {
     color: colors.white,
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
   },
   actionList: {
     gap: spacing.md,
+    marginHorizontal: spacing.lg,
+  },
+  actionButton: {
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderColor: colors.borderSoft,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 18,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  actionIcon: {
+    marginRight: spacing.md,
+  },
+  actionButtonText: {
+    color: colors.textPrimary,
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'left',
   },
 });
