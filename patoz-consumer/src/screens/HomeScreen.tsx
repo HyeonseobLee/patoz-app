@@ -1,21 +1,63 @@
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Alert,
+  Animated,
+  Image,
+  PanResponder,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppContext } from '../context/AppContext';
 import { RootTabParamList } from '../navigation/types';
-import { ServiceStatus } from '../types';
 import { colors, radius, spacing } from '../styles/theme';
+import { Device, ServiceStatus } from '../types';
 
 type Props = BottomTabScreenProps<RootTabParamList, 'Home'>;
 
+const DRAG_STEP = 156;
+
+const moveDevice = (items: Device[], fromIndex: number, toIndex: number) => {
+  if (fromIndex < 0 || toIndex < 0 || fromIndex >= items.length || toIndex >= items.length) {
+    return items;
+  }
+
+  const nextItems = [...items];
+  const [target] = nextItems.splice(fromIndex, 1);
+  nextItems.splice(toIndex, 0, target);
+
+  return nextItems;
+};
+
 export default function HomeScreen({ navigation }: Props) {
-  const { devices, addDevice, setSelectedDeviceId, moveDeviceUp, moveDeviceDown } = useAppContext();
+  const { devices, addDevice, setSelectedDeviceId, reorderDevices } = useAppContext();
   const [serialNumber, setSerialNumber] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
+  const [editableDevices, setEditableDevices] = useState<Device[]>(devices);
+  const [draggingDeviceId, setDraggingDeviceId] = useState<string | null>(null);
   const [, setRefreshKey] = useState(0);
+
+  const dragTranslateY = useRef(new Animated.Value(0)).current;
+  const editableDevicesRef = useRef<Device[]>(devices);
+  const dragOriginIndexRef = useRef(0);
+
+  useEffect(() => {
+    editableDevicesRef.current = editableDevices;
+  }, [editableDevices]);
+
+  useEffect(() => {
+    if (!isEditMode) {
+      setEditableDevices(devices);
+      editableDevicesRef.current = devices;
+    }
+  }, [devices, isEditMode]);
 
   useFocusEffect(
     useCallback(() => {
@@ -46,6 +88,19 @@ export default function HomeScreen({ navigation }: Props) {
     navigation.navigate('DeviceDashboard', { deviceId });
   };
 
+  const toggleEditMode = () => {
+    if (isEditMode) {
+      reorderDevices(editableDevicesRef.current);
+      setDraggingDeviceId(null);
+      setIsEditMode(false);
+      return;
+    }
+
+    setEditableDevices(devices);
+    editableDevicesRef.current = devices;
+    setIsEditMode(true);
+  };
+
   const isRepairHighlighted = (status?: ServiceStatus | null) => {
     return status === 'In-Repair' || status === 'Repair-Finished';
   };
@@ -61,6 +116,73 @@ export default function HomeScreen({ navigation }: Props) {
 
     return null;
   };
+
+  const devicesToRender = isEditMode ? editableDevices : devices;
+
+  const createPanResponder = useCallback(
+    (deviceId: string) => {
+      return PanResponder.create({
+        onStartShouldSetPanResponder: () => isEditMode,
+        onMoveShouldSetPanResponder: (_, gestureState) => isEditMode && Math.abs(gestureState.dy) > 4,
+        onPanResponderGrant: () => {
+          const index = editableDevicesRef.current.findIndex((device) => device.id === deviceId);
+          setDraggingDeviceId(deviceId);
+          dragOriginIndexRef.current = index;
+          dragTranslateY.setValue(0);
+        },
+        onPanResponderMove: (_, gestureState) => {
+          if (!isEditMode) {
+            return;
+          }
+
+          dragTranslateY.setValue(gestureState.dy);
+
+          const movingIndex = editableDevicesRef.current.findIndex((device) => device.id === deviceId);
+
+          if (movingIndex < 0) {
+            return;
+          }
+
+          const nextIndex = Math.max(
+            0,
+            Math.min(
+              editableDevicesRef.current.length - 1,
+              dragOriginIndexRef.current + Math.round(gestureState.dy / DRAG_STEP)
+            )
+          );
+
+          if (nextIndex === movingIndex) {
+            return;
+          }
+
+          const reordered = moveDevice(editableDevicesRef.current, movingIndex, nextIndex);
+          editableDevicesRef.current = reordered;
+          setEditableDevices(reordered);
+        },
+        onPanResponderRelease: () => {
+          Animated.spring(dragTranslateY, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+          setDraggingDeviceId(null);
+          reorderDevices(editableDevicesRef.current);
+        },
+        onPanResponderTerminate: () => {
+          Animated.spring(dragTranslateY, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+          setDraggingDeviceId(null);
+        },
+      });
+    },
+    [dragTranslateY, isEditMode, reorderDevices]
+  );
+
+  const panResponders = useMemo(() => {
+    const entries = devicesToRender.map((device) => [device.id, createPanResponder(device.id)] as const);
+    return Object.fromEntries(entries);
+  }, [createPanResponder, devicesToRender]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -88,65 +210,69 @@ export default function HomeScreen({ navigation }: Props) {
 
         <View style={styles.listMetaRow}>
           <Text style={styles.deviceCountText}>총 {devices.length}대</Text>
-          <Pressable onPress={() => setIsEditMode((prev) => !prev)} style={styles.editToggleButton}>
+          <Pressable onPress={toggleEditMode} style={styles.editToggleButton}>
             <Text style={styles.editToggleText}>{isEditMode ? '편집 완료' : '순서 편집'}</Text>
           </Pressable>
         </View>
 
-        {isEditMode ? (
-          <Text style={styles.editHint}>드래그 대신 버튼으로 순서를 변경할 수 있어요.</Text>
-        ) : null}
+        {isEditMode ? <Text style={styles.editHint}>카드를 길게 누른 뒤 위/아래로 드래그해 순서를 바꿔보세요.</Text> : null}
 
-        {devices.length === 0 ? (
+        {devicesToRender.length === 0 ? (
           <View style={styles.emptyStateCard}>
             <Text style={styles.emptyTitle}>등록된 PM 기기가 없습니다.</Text>
             <Text style={styles.emptyDescription}>시리얼 넘버를 입력하고 첫 기기를 등록해보세요.</Text>
           </View>
         ) : (
           <View style={styles.deviceList}>
-            {devices.map((device, index) => {
+            {devicesToRender.map((device) => {
               const isHighlighted = isRepairHighlighted(device.serviceStatus);
               const repairBadgeLabel = getRepairBadgeLabel(device.serviceStatus);
+              const isDragging = isEditMode && draggingDeviceId === device.id;
 
               return (
-                <Pressable
+                <Animated.View
                   key={device.id}
-                  onPress={() => handleCardPress(device.id)}
-                  style={[styles.deviceCard, isHighlighted && styles.repairHighlightedCard]}
+                  style={[
+                    isDragging && {
+                      transform: [{ translateY: dragTranslateY }],
+                      zIndex: 5,
+                    },
+                  ]}
                 >
-                  {device.imageUri ? <Image source={{ uri: device.imageUri }} style={styles.deviceImage} /> : <View style={styles.imagePlaceholder} />}
-                  <View style={styles.cardBody}>
-                    <Text style={styles.brandText}>{device.brand}</Text>
-                    <Text style={styles.modelName}>{device.modelName}</Text>
-                    {repairBadgeLabel ? (
-                      <View style={styles.repairStatusBadge}>
-                        <Text style={styles.repairStatusBadgeText}>{repairBadgeLabel}</Text>
+                  <Pressable
+                    onPress={() => handleCardPress(device.id)}
+                    style={[
+                      styles.deviceCard,
+                      isHighlighted && styles.repairHighlightedCard,
+                      isDragging && styles.draggingCard,
+                    ]}
+                    {...(isEditMode ? panResponders[device.id]?.panHandlers : {})}
+                  >
+                    {device.imageUri ? (
+                      <Image source={{ uri: device.imageUri }} style={styles.deviceImage} />
+                    ) : (
+                      <View style={styles.imagePlaceholder} />
+                    )}
+                    <View style={styles.cardBody}>
+                      <Text style={styles.brandText}>{device.brand}</Text>
+                      <Text style={styles.modelName}>{device.modelName}</Text>
+                      {repairBadgeLabel ? (
+                        <View style={styles.repairStatusBadge}>
+                          <Text style={styles.repairStatusBadgeText}>{repairBadgeLabel}</Text>
+                        </View>
+                      ) : null}
+                      <Text style={styles.infoText}>색상: {device.color}</Text>
+                      <Text style={styles.infoText}>시리얼 넘버: {device.serialNumber}</Text>
+                      <Text style={styles.infoText}>등록 연도: {device.registeredYear}</Text>
+                    </View>
+
+                    {isEditMode ? (
+                      <View style={styles.dragHandleBadge}>
+                        <Text style={styles.dragHandleText}>≡</Text>
                       </View>
                     ) : null}
-                    <Text style={styles.infoText}>색상: {device.color}</Text>
-                    <Text style={styles.infoText}>시리얼 넘버: {device.serialNumber}</Text>
-                    <Text style={styles.infoText}>등록 연도: {device.registeredYear}</Text>
-                  </View>
-
-                  {isEditMode ? (
-                    <View style={styles.orderButtons}>
-                      <Pressable
-                        disabled={index === 0}
-                        onPress={() => moveDeviceUp(device.id)}
-                        style={[styles.orderButton, index === 0 && styles.disabledOrderButton]}
-                      >
-                        <Text style={styles.orderButtonText}>위로</Text>
-                      </Pressable>
-                      <Pressable
-                        disabled={index === devices.length - 1}
-                        onPress={() => moveDeviceDown(device.id)}
-                        style={[styles.orderButton, index === devices.length - 1 && styles.disabledOrderButton]}
-                      >
-                        <Text style={styles.orderButtonText}>아래로</Text>
-                      </Pressable>
-                    </View>
-                  ) : null}
-                </Pressable>
+                  </Pressable>
+                </Animated.View>
               );
             })}
           </View>
@@ -287,6 +413,15 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
+  draggingCard: {
+    borderColor: '#60A5FA',
+    borderWidth: 2,
+    shadowColor: '#2563EB',
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
+  },
   repairHighlightedCard: {
     borderColor: '#1E3A8A',
     borderWidth: 2,
@@ -339,23 +474,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  orderButtons: {
-    gap: spacing.xs,
-    justifyContent: 'center',
-  },
-  orderButton: {
+  dragHandleBadge: {
     alignItems: 'center',
-    backgroundColor: '#E2E8F0',
+    alignSelf: 'center',
+    backgroundColor: '#DBEAFE',
     borderRadius: radius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
+    minWidth: 26,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
   },
-  disabledOrderButton: {
-    opacity: 0.5,
-  },
-  orderButtonText: {
-    color: colors.textPrimary,
-    fontSize: 12,
-    fontWeight: '700',
+  dragHandleText: {
+    color: '#1E40AF',
+    fontSize: 14,
+    fontWeight: '800',
   },
 });

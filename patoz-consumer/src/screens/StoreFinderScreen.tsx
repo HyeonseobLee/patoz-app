@@ -88,6 +88,15 @@ const getMarkerPosition = (store: Store) => {
   return { top: `${top}%` as `${number}%`, left: `${left}%` as `${number}%` };
 };
 
+const isStoreInViewport = (store: Store) => {
+  const latMin = defaultRegion.latitude - defaultRegion.latitudeDelta / 2;
+  const latMax = defaultRegion.latitude + defaultRegion.latitudeDelta / 2;
+  const lonMin = defaultRegion.longitude - defaultRegion.longitudeDelta / 2;
+  const lonMax = defaultRegion.longitude + defaultRegion.longitudeDelta / 2;
+
+  return store.latitude >= latMin && store.latitude <= latMax && store.longitude >= lonMin && store.longitude <= lonMax;
+};
+
 export default function StoreFinderScreen() {
   const [salesOnly, setSalesOnly] = useState(false);
   const [repairOnly, setRepairOnly] = useState(false);
@@ -107,7 +116,11 @@ export default function StoreFinderScreen() {
     });
   }, [repairOnly, salesOnly]);
 
-  const selectedStore = filteredStores.find((store) => store.id === selectedStoreId) ?? null;
+  const visibleStores = useMemo(() => {
+    return filteredStores.filter(isStoreInViewport);
+  }, [filteredStores]);
+
+  const selectedStore = visibleStores.find((store) => store.id === selectedStoreId) ?? null;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -131,7 +144,7 @@ export default function StoreFinderScreen() {
 
         <View style={styles.contentArea}>
           <View style={styles.mapSurface}>
-            {filteredStores.map((store) => {
+            {visibleStores.map((store) => {
               const markerPosition = getMarkerPosition(store);
               const isSelected = selectedStoreId === store.id;
 
@@ -149,7 +162,7 @@ export default function StoreFinderScreen() {
               );
             })}
 
-            {filteredStores.length === 0 ? (
+            {visibleStores.length === 0 ? (
               <View style={styles.emptyFilterState}>
                 <Text style={styles.emptyFilterText}>조건에 맞는 매장이 없습니다.</Text>
               </View>
@@ -214,7 +227,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   filterButtonActive: {
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#60A5FA',
   },
   filterButtonText: {
     color: '#334155',
@@ -222,7 +235,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   filterButtonTextActive: {
-    color: '#1E3A8A',
+    color: '#0B1A48',
   },
   contentArea: {
     flex: 1,
