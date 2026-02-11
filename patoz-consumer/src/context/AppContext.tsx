@@ -87,6 +87,7 @@ export function AppProvider({ children }: AppProviderProps) {
       serialNumber: trimmedSerialNumber,
       color: 'Midnight Navy',
       registeredYear: 2024,
+      serviceStatus: 'In-Repair',
     };
 
     setDevices((prev) => [...prev, newDevice]);

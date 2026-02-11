@@ -5,6 +5,7 @@ export type Device = {
   serialNumber: string;
   color: string;
   registeredYear: number;
+  serviceStatus: 'In-Repair' | 'Repair-Finished' | 'Received';
   imageUri?: string;
 };
 
@@ -26,6 +27,7 @@ export const initialDevices: Device[] = [
     serialNumber: 'ST12345678',
     color: 'Midnight Navy',
     registeredYear: 2024,
+    serviceStatus: 'In-Repair',
     imageUri:
       'https://images.unsplash.com/photo-1544191696-102dbdaeeaa0?auto=format&fit=crop&w=900&q=80',
   },
