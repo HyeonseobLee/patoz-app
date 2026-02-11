@@ -1,6 +1,7 @@
 import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
+import AppHeader from '../components/AppHeader';
 import { useAppContext } from '../context/AppContext';
 import { HistoryItem } from '../data/mock';
 import { colors, spacing } from '../styles/theme';
@@ -21,7 +22,7 @@ export default function MaintenanceHistoryScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>정비 이력</Text>
+      <AppHeader title="정비 이력" showDivider />
 
       <FlatList
         contentContainerStyle={styles.list}
@@ -37,27 +38,21 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.background,
     flex: 1,
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xl,
-  },
-  heading: {
-    color: colors.textPrimary,
-    fontSize: 28,
-    fontWeight: '800',
-    marginBottom: spacing.lg,
   },
   list: {
-    gap: spacing.md,
+    gap: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
     paddingBottom: spacing.xl,
   },
   date: {
-    color: colors.textMuted,
-    fontSize: 13,
+    color: '#94A3B8',
+    fontSize: 12,
     marginBottom: spacing.xs,
   },
   title: {
     color: colors.textPrimary,
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '700',
     marginBottom: spacing.xs,
   },
