@@ -1,9 +1,8 @@
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import AppHeader from '../components/AppHeader';
-import { useAppContext } from '../context/AppContext';
 import { RootTabParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../styles/theme';
 import { ui } from '../styles/ui';
@@ -11,15 +10,22 @@ import { ui } from '../styles/ui';
 type Props = BottomTabScreenProps<RootTabParamList, 'RepairFlow'>;
 
 export default function RepairFlowScreen({ navigation }: Props) {
-  const { addInquiry } = useAppContext();
   const [intake, setIntake] = useState('');
   const [symptoms, setSymptoms] = useState('');
 
   const handleSubmit = () => {
-    addInquiry({ intake, symptoms });
-    setIntake('');
-    setSymptoms('');
-    navigation.navigate('MaintenanceHistory');
+    const hasIntake = intake.trim().length > 0;
+    const hasSymptoms = symptoms.trim().length > 0;
+
+    if (!hasIntake && !hasSymptoms) {
+      Alert.alert('알림', '점검 내용을 입력해주세요.');
+      return;
+    }
+
+    navigation.navigate('RepairRequest', {
+      intake,
+      symptoms,
+    });
   };
 
   return (
@@ -27,6 +33,8 @@ export default function RepairFlowScreen({ navigation }: Props) {
       <AppHeader title="정비 접수" showDivider />
 
       <View style={[ui.card, styles.formCard]}>
+        <Text style={styles.formTitle}>간단 점검</Text>
+
         <View style={styles.formGroup}>
           <Text style={styles.label}>접수 내용</Text>
           <TextInput
@@ -53,7 +61,7 @@ export default function RepairFlowScreen({ navigation }: Props) {
         </View>
 
         <Pressable onPress={handleSubmit} style={styles.submitButton}>
-          <Text style={styles.submitButtonText}>제출</Text>
+          <Text style={styles.submitButtonText}>점검 완료</Text>
         </Pressable>
       </View>
     </View>
@@ -70,6 +78,11 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     marginHorizontal: spacing.lg,
     padding: spacing.xl,
+  },
+  formTitle: {
+    color: colors.textPrimary,
+    fontSize: 20,
+    fontWeight: '700',
   },
   formGroup: {
     gap: spacing.sm,

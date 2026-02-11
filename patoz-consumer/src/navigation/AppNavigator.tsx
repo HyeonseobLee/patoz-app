@@ -7,12 +7,13 @@ import { tabLabels } from '../data/mock';
 import MaintenanceHistoryScreen from '../screens/MaintenanceHistoryScreen';
 import HomeScreen from '../screens/HomeScreen';
 import RepairFlowScreen from '../screens/RepairFlowScreen';
+import RepairRequestScreen from '../screens/RepairRequestScreen';
 import { colors } from '../styles/theme';
 import { RootTabParamList } from './types';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
-const iconByRoute: Record<keyof RootTabParamList, keyof typeof Ionicons.glyphMap> = {
+const iconByRoute: Partial<Record<keyof RootTabParamList, keyof typeof Ionicons.glyphMap>> = {
   Home: 'home-outline',
   RepairFlow: 'construct-outline',
   MaintenanceHistory: 'document-text-outline',
@@ -30,10 +31,12 @@ export default function AppNavigator() {
             height: 74,
             paddingTop: 8,
             paddingBottom: 10,
+            display: route.name === 'RepairRequest' ? 'none' : 'flex',
           },
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons color={color} name={iconByRoute[route.name as keyof RootTabParamList]} size={size} />
-          ),
+          tabBarIcon: ({ color, size }) => {
+            const iconName = iconByRoute[route.name as keyof RootTabParamList];
+            return iconName ? <Ionicons color={color} name={iconName} size={size} /> : null;
+          },
         })}
       >
         <Tab.Screen component={HomeScreen} name="Home" options={{ title: tabLabels.home }} />
@@ -42,6 +45,14 @@ export default function AppNavigator() {
           component={MaintenanceHistoryScreen}
           name="MaintenanceHistory"
           options={{ title: tabLabels.history }}
+        />
+        <Tab.Screen
+          component={RepairRequestScreen}
+          name="RepairRequest"
+          options={{
+            title: '수리 접수',
+            tabBarButton: () => null,
+          }}
         />
       </Tab.Navigator>
     </NavigationContainer>
