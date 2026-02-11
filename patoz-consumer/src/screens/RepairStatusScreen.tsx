@@ -130,7 +130,9 @@ export default function RepairStatusScreen({ navigation }: Props) {
     useCallback(() => {
       setRefreshKey((prev) => prev + 1);
 
-      if (selectedDevice?.serviceStatus === 'In-Repair') {
+      if (selectedDevice?.serviceStatus === 'Registered') {
+        setRepairStage('REGISTERED');
+      } else if (selectedDevice?.serviceStatus === 'In-Repair') {
         setRepairStage('REPAIRING');
       } else if (selectedDevice?.serviceStatus === 'Repair-Finished') {
         setRepairStage('REPAIR_COMPLETED');

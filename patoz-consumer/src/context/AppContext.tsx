@@ -63,7 +63,7 @@ export function AppProvider({ children }: AppProviderProps) {
       return;
     }
 
-    updateDeviceServiceStatus(targetDeviceId, 'In-Repair');
+    updateDeviceServiceStatus(targetDeviceId, 'Registered');
 
     const newItem: HistoryItem = {
       id: `${Date.now()}`,

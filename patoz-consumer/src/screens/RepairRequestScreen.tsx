@@ -42,8 +42,16 @@ export default function RepairRequestScreen({ navigation, route }: Props) {
 
   const handleConfirm = () => {
     addInquiry({ intake, symptoms });
-    Alert.alert('접수가 완료되었습니다');
-    navigation.navigate('MaintenanceHistory');
+    Alert.alert(
+      '접수 완료',
+      '수리 접수가 완료되었습니다. 업체들의 견적을 기다려주세요.',
+      [
+        {
+          text: '확인',
+          onPress: () => navigation.navigate('RepairStatus'),
+        },
+      ]
+    );
   };
 
   return (
