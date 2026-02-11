@@ -13,7 +13,7 @@ import { colors, radius, spacing } from '../styles/theme';
 type Props = BottomTabScreenProps<RootTabParamList, 'DeviceDashboard'>;
 
 const actionIcons: Record<(typeof homeActions)[number], keyof typeof Ionicons.glyphMap> = {
-  'AI 간편 점검': 'sparkles-outline',
+  'AI 간편 진단': 'sparkles-outline',
   '수리 진행 현황': 'build-outline',
   '정비 이력': 'document-text-outline',
   '도난 신고': 'alert-circle-outline',
@@ -34,13 +34,21 @@ export default function DeviceDashboardScreen({ navigation, route }: Props) {
     setSelectedDeviceId(route.params.deviceId);
   }, [route.params.deviceId, setSelectedDeviceId]);
 
+  const fallbackDevice = devices.find((device) => device.id === route.params.deviceId) ?? selectedDevice;
+
+  const canViewRepairStatus =
+    fallbackDevice?.serviceStatus === 'In-Repair' || fallbackDevice?.serviceStatus === 'Repair-Finished';
+
   const onActionPress = (action: (typeof homeActions)[number]) => {
-    if (action === 'AI 간편 점검') {
+    if (action === 'AI 간편 진단') {
       navigation.navigate('RepairFlow');
       return;
     }
 
     if (action === '수리 진행 현황') {
+      if (!canViewRepairStatus) {
+        return;
+      }
       navigation.navigate('RepairStatus');
       return;
     }
@@ -53,57 +61,64 @@ export default function DeviceDashboardScreen({ navigation, route }: Props) {
     Alert.alert(action, '데모 화면입니다. 추후 기능이 연결됩니다.');
   };
 
-  const fallbackDevice = devices.find((device) => device.id === route.params.deviceId) ?? selectedDevice;
-
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} style={styles.container}>
+        {fallbackDevice ? (
+          <View style={styles.deviceSection}>
+            <View style={styles.deviceCard}>
+              {fallbackDevice.imageUri ? (
+                <Image source={{ uri: fallbackDevice.imageUri }} style={styles.deviceImage} />
+              ) : (
+                <View style={styles.imagePlaceholder} />
+              )}
 
-      {fallbackDevice ? (
-        <View style={styles.deviceSection}>
-          <View style={styles.deviceCard}>
-            {fallbackDevice.imageUri ? (
-              <Image source={{ uri: fallbackDevice.imageUri }} style={styles.deviceImage} />
-            ) : (
-              <View style={styles.imagePlaceholder} />
-            )}
+              <Text style={styles.brandText}>{fallbackDevice.brand}</Text>
+              <Text style={styles.modelName}>{fallbackDevice.modelName}</Text>
 
-            <Text style={styles.brandText}>{fallbackDevice.brand}</Text>
-            <Text style={styles.modelName}>{fallbackDevice.modelName}</Text>
-
-            <View style={styles.deviceRow}>
-              <Text style={styles.deviceLabel}>색상</Text>
-              <Text style={styles.deviceValue}>{fallbackDevice.color}</Text>
-            </View>
-            <View style={styles.deviceRow}>
-              <Text style={styles.deviceLabel}>시리얼 넘버</Text>
-              <Text style={styles.deviceValue}>{fallbackDevice.serialNumber}</Text>
-            </View>
-            <View style={styles.deviceRow}>
-              <Text style={styles.deviceLabel}>등록 연도</Text>
-              <Text style={styles.deviceValue}>{fallbackDevice.registeredYear}</Text>
+              <View style={styles.deviceRow}>
+                <Text style={styles.deviceLabel}>색상</Text>
+                <Text style={styles.deviceValue}>{fallbackDevice.color}</Text>
+              </View>
+              <View style={styles.deviceRow}>
+                <Text style={styles.deviceLabel}>시리얼 넘버</Text>
+                <Text style={styles.deviceValue}>{fallbackDevice.serialNumber}</Text>
+              </View>
+              <View style={styles.deviceRow}>
+                <Text style={styles.deviceLabel}>등록 연도</Text>
+                <Text style={styles.deviceValue}>{fallbackDevice.registeredYear}</Text>
+              </View>
             </View>
           </View>
-        </View>
-      ) : (
-        <View style={styles.emptyStateCard}>
-          <Text style={styles.emptyTitle}>선택된 기기를 찾을 수 없습니다.</Text>
-          <Pressable onPress={() => navigation.navigate('Home')} style={styles.backButton}>
-            <Text style={styles.backButtonText}>목록으로 돌아가기</Text>
-          </Pressable>
-        </View>
-      )}
+        ) : (
+          <View style={styles.emptyStateCard}>
+            <Text style={styles.emptyTitle}>선택된 기기를 찾을 수 없습니다.</Text>
+            <Pressable onPress={() => navigation.navigate('Home')} style={styles.backButton}>
+              <Text style={styles.backButtonText}>목록으로 돌아가기</Text>
+            </Pressable>
+          </View>
+        )}
 
-      <View style={styles.actionList}>
-        {homeActions.map((action) => (
-          <Pressable key={action} onPress={() => onActionPress(action)} style={styles.actionButton}>
-            <Ionicons color={colors.brand} name={actionIcons[action]} size={22} style={styles.actionIcon} />
-            <Text style={styles.actionButtonText}>{action}</Text>
-          </Pressable>
-        ))}
-      </View>
-    </ScrollView>
-  </SafeAreaView>
+        <View style={styles.actionList}>
+          {homeActions.map((action) => {
+            const isRepairStatusAction = action === '수리 진행 현황';
+            const isDisabled = isRepairStatusAction && !canViewRepairStatus;
+
+            return (
+              <Pressable
+                key={action}
+                disabled={isDisabled}
+                onPress={() => onActionPress(action)}
+                style={[styles.actionButton, isDisabled && styles.actionButtonDisabled]}
+              >
+                <Ionicons color={colors.brand} name={actionIcons[action]} size={22} style={styles.actionIcon} />
+                <Text style={[styles.actionButtonText, isDisabled && styles.actionButtonTextDisabled]}>{action}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -216,6 +231,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
+  actionButtonDisabled: {
+    opacity: 0.45,
+  },
   actionIcon: {
     marginRight: spacing.md,
   },
@@ -225,5 +243,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'left',
+  },
+  actionButtonTextDisabled: {
+    color: colors.textMuted,
   },
 });

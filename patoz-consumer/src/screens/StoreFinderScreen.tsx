@@ -16,10 +16,10 @@ type Store = {
 };
 
 const defaultRegion = {
-  latitude: 37.5665,
-  longitude: 126.978,
-  latitudeDelta: 0.08,
-  longitudeDelta: 0.08,
+  latitude: 37.548,
+  longitude: 127.0,
+  latitudeDelta: 0.11,
+  longitudeDelta: 0.14,
 };
 
 const stores: Store[] = [
@@ -53,6 +53,26 @@ const stores: Store[] = [
     supportsSales: true,
     supportsRepair: false,
   },
+  {
+    id: 'store-4',
+    name: 'PATOZ 송파 프리미엄센터',
+    latitude: 37.5147,
+    longitude: 127.1057,
+    distanceKm: 8.2,
+    phone: '02-7611-4455',
+    supportsSales: true,
+    supportsRepair: true,
+  },
+  {
+    id: 'store-5',
+    name: 'PATOZ 마포 리페어 허브',
+    latitude: 37.5489,
+    longitude: 126.9052,
+    distanceKm: 6.4,
+    phone: '02-7755-9900',
+    supportsSales: false,
+    supportsRepair: true,
+  },
 ];
 
 const getMarkerPosition = (store: Store) => {
@@ -62,8 +82,8 @@ const getMarkerPosition = (store: Store) => {
   const yRatio = (store.latitude - latMin) / defaultRegion.latitudeDelta;
   const xRatio = (store.longitude - lonMin) / defaultRegion.longitudeDelta;
 
-  const top = 100 - Math.min(98, Math.max(2, yRatio * 100));
-  const left = Math.min(96, Math.max(4, xRatio * 100));
+  const top = 100 - Math.min(90, Math.max(10, yRatio * 100));
+  const left = Math.min(92, Math.max(8, xRatio * 100));
 
   return { top: `${top}%` as `${number}%`, left: `${left}%` as `${number}%` };
 };
@@ -109,46 +129,48 @@ export default function StoreFinderScreen() {
           </Pressable>
         </View>
 
-        <View style={styles.mapSurface}>
-          {filteredStores.map((store) => {
-            const markerPosition = getMarkerPosition(store);
-            const isSelected = selectedStoreId === store.id;
+        <View style={styles.contentArea}>
+          <View style={styles.mapSurface}>
+            {filteredStores.map((store) => {
+              const markerPosition = getMarkerPosition(store);
+              const isSelected = selectedStoreId === store.id;
 
-            return (
-              <Pressable
-                key={store.id}
-                onPress={() => setSelectedStoreId(store.id)}
-                style={[styles.marker, markerPosition, isSelected && styles.markerSelected]}
-              >
-                <Text numberOfLines={1} style={[styles.markerLabel, isSelected && styles.markerLabelSelected]}>
-                  {store.name}
-                </Text>
-                <Text style={styles.markerText}>●</Text>
-              </Pressable>
-            );
-          })}
+              return (
+                <Pressable
+                  key={store.id}
+                  onPress={() => setSelectedStoreId(store.id)}
+                  style={[styles.marker, markerPosition, isSelected && styles.markerSelected]}
+                >
+                  <Text numberOfLines={1} style={[styles.markerLabel, isSelected && styles.markerLabelSelected]}>
+                    {store.name}
+                  </Text>
+                  <Text style={styles.markerText}>●</Text>
+                </Pressable>
+              );
+            })}
 
-          {filteredStores.length === 0 ? (
-            <View style={styles.emptyFilterState}>
-              <Text style={styles.emptyFilterText}>조건에 맞는 매장이 없습니다.</Text>
-            </View>
-          ) : null}
-        </View>
+            {filteredStores.length === 0 ? (
+              <View style={styles.emptyFilterState}>
+                <Text style={styles.emptyFilterText}>조건에 맞는 매장이 없습니다.</Text>
+              </View>
+            ) : null}
+          </View>
 
-        <View style={styles.bottomOverlay}>
-          {selectedStore ? (
-            <View style={styles.storeCard}>
-              <Text style={styles.storeName}>{selectedStore.name}</Text>
-              <Text style={styles.storeMeta}>거리 {selectedStore.distanceKm.toFixed(1)}km</Text>
-              <Text style={styles.storeMeta}>판매 가능: {selectedStore.supportsSales ? '가능' : '불가'}</Text>
-              <Text style={styles.storeMeta}>수리 가능: {selectedStore.supportsRepair ? '가능' : '불가'}</Text>
-              <Text style={styles.storeMeta}>연락처: {selectedStore.phone}</Text>
-            </View>
-          ) : (
-            <View style={styles.helperCard}>
-              <Text style={styles.helperText}>마커를 탭하면 매장 상세 정보가 표시됩니다.</Text>
-            </View>
-          )}
+          <View style={styles.infoArea}>
+            {selectedStore ? (
+              <View style={styles.storeCard}>
+                <Text style={styles.storeName}>{selectedStore.name}</Text>
+                <Text style={styles.storeMeta}>거리 {selectedStore.distanceKm.toFixed(1)}km</Text>
+                <Text style={styles.storeMeta}>판매 가능: {selectedStore.supportsSales ? '가능' : '불가'}</Text>
+                <Text style={styles.storeMeta}>수리 가능: {selectedStore.supportsRepair ? '가능' : '불가'}</Text>
+                <Text style={styles.storeMeta}>연락처: {selectedStore.phone}</Text>
+              </View>
+            ) : (
+              <View style={styles.helperCard}>
+                <Text style={styles.helperText}>마커를 탭하면 매장 상세 정보가 표시됩니다.</Text>
+              </View>
+            )}
+          </View>
         </View>
       </View>
     </SafeAreaView>
@@ -177,7 +199,6 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.lg,
     marginTop: spacing.md,
     overflow: 'hidden',
-    position: 'relative',
   },
   filterRow: {
     flexDirection: 'row',
@@ -185,7 +206,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingHorizontal: spacing.sm,
     paddingTop: spacing.sm,
-    zIndex: 2,
   },
   filterButton: {
     backgroundColor: '#E2E8F0',
@@ -204,14 +224,18 @@ const styles = StyleSheet.create({
   filterButtonTextActive: {
     color: '#1E3A8A',
   },
+  contentArea: {
+    flex: 1,
+    padding: spacing.sm,
+    paddingTop: spacing.xs,
+  },
   mapSurface: {
     backgroundColor: '#EAF2FF',
     borderColor: '#BFDBFE',
     borderRadius: radius.md,
     borderWidth: 1,
     flex: 1,
-    margin: spacing.sm,
-    marginBottom: 88,
+    minHeight: 200,
     position: 'relative',
   },
   marker: {
@@ -255,11 +279,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  bottomOverlay: {
-    bottom: spacing.sm,
-    left: spacing.sm,
-    position: 'absolute',
-    right: spacing.sm,
+  infoArea: {
+    marginTop: spacing.sm,
+    minHeight: 120,
   },
   storeCard: {
     backgroundColor: 'rgba(255,255,255,0.96)',
