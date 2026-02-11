@@ -18,6 +18,7 @@ type AppContextValue = {
   setSelectedDeviceId: (id: string) => void;
   moveDeviceUp: (id: string) => void;
   moveDeviceDown: (id: string) => void;
+  reorderDevices: (nextDevices: Device[]) => void;
   updateDeviceServiceStatus: (id: string, status: ServiceStatus | null) => void;
 };
 
@@ -132,6 +133,10 @@ export function AppProvider({ children }: AppProviderProps) {
     });
   };
 
+  const reorderDevices = (nextDevices: Device[]) => {
+    setDevices(nextDevices);
+  };
+
   const selectedDevice = useMemo(() => {
     return devices.find((device) => device.id === selectedDeviceId) ?? null;
   }, [devices, selectedDeviceId]);
@@ -147,6 +152,7 @@ export function AppProvider({ children }: AppProviderProps) {
       setSelectedDeviceId,
       moveDeviceUp,
       moveDeviceDown,
+      reorderDevices,
       updateDeviceServiceStatus,
     }),
     [devices, selectedDeviceId, selectedDevice, history]

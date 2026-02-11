@@ -5,6 +5,7 @@ import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import EstimateCard, { Estimate } from '../components/EstimateCard';
+import { useAppContext } from '../context/AppContext';
 import { RootTabParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../styles/theme';
 
@@ -49,14 +50,16 @@ const estimateMockData: EstimateDetail[] = [
 ];
 
 export default function RepairStatusScreen({ navigation }: Props) {
+  const { selectedDeviceId, updateDeviceServiceStatus } = useAppContext();
   const [, setRefreshKey] = useState(0);
   const [repairStatus, setRepairStatus] = useState<RepairStatus>('접수 완료');
   const [selectedEstimate, setSelectedEstimate] = useState<EstimateDetail | null>(null);
-  const [selectedVendorName, setSelectedVendorName] = useState('-');
+  const [confirmedEstimate, setConfirmedEstimate] = useState<EstimateDetail | null>(null);
 
   const currentStepIndex = timelineSteps.indexOf(repairStatus);
   const isFinalState = repairStatus === finalStep;
   const isEstimateSectionVisible = repairStatus === '접수 완료';
+  const isConfirmedSectionVisible = repairStatus === '수리 중' && Boolean(confirmedEstimate);
 
   useFocusEffect(
     useCallback(() => {
@@ -79,7 +82,12 @@ export default function RepairStatusScreen({ navigation }: Props) {
         text: '시작하기',
         onPress: () => {
           setRepairStatus('수리 중');
-          setSelectedVendorName(selectedEstimate.vendorName);
+          setConfirmedEstimate(selectedEstimate);
+
+          if (selectedDeviceId) {
+            updateDeviceServiceStatus(selectedDeviceId, 'In-Repair');
+          }
+
           setSelectedEstimate(null);
         },
       },
@@ -105,7 +113,7 @@ export default function RepairStatusScreen({ navigation }: Props) {
           </View>
           <View style={styles.metaRow}>
             <Text style={styles.metaLabel}>선정 업체</Text>
-            <Text style={styles.metaValue}>{selectedVendorName}</Text>
+            <Text style={styles.metaValue}>{confirmedEstimate?.vendorName ?? '-'}</Text>
           </View>
 
           <View style={styles.badge}>
@@ -113,28 +121,56 @@ export default function RepairStatusScreen({ navigation }: Props) {
           </View>
         </View>
 
-        <View style={styles.card}>
-          {isEstimateSectionVisible ? (
-            <View style={styles.estimateSection}>
-              <View style={styles.estimateHeaderRow}>
-                <Text style={styles.sectionTitle}>도착한 견적서</Text>
-                <View style={styles.estimateCountBadge}>
-                  <Text style={styles.estimateCountText}>{estimateMockData.length}건</Text>
-                </View>
-              </View>
-
-              <View style={styles.estimateList}>
-                {estimateMockData.map((estimate) => (
-                  <EstimateCard
-                    estimate={estimate}
-                    key={estimate.id}
-                    onPress={() => setSelectedEstimate(estimate)}
-                  />
-                ))}
+        {isEstimateSectionVisible ? (
+          <View style={styles.card}>
+            <View style={styles.estimateHeaderRow}>
+              <Text style={styles.sectionTitle}>도착한 견적서</Text>
+              <View style={styles.estimateCountBadge}>
+                <Text style={styles.estimateCountText}>{estimateMockData.length}건</Text>
               </View>
             </View>
-          ) : null}
 
+            <View style={styles.estimateList}>
+              {estimateMockData.map((estimate) => (
+                <EstimateCard estimate={estimate} key={estimate.id} onPress={() => setSelectedEstimate(estimate)} />
+              ))}
+            </View>
+          </View>
+        ) : null}
+
+        {isConfirmedSectionVisible ? (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>선택한 업체 정보</Text>
+            <View style={styles.metaRow}>
+              <Text style={styles.metaLabel}>업체명</Text>
+              <Text style={styles.metaValue}>{confirmedEstimate?.vendorName}</Text>
+            </View>
+            <View style={styles.metaRow}>
+              <Text style={styles.metaLabel}>평점</Text>
+              <Text style={styles.metaValue}>⭐ {confirmedEstimate?.rating.toFixed(1)}</Text>
+            </View>
+
+            <Text style={[styles.sectionTitle, styles.confirmedSectionTitle]}>확정된 견적 내용</Text>
+            <View style={styles.metaRow}>
+              <Text style={styles.metaLabel}>확정 수리 비용</Text>
+              <Text style={styles.metaValue}>{confirmedEstimate?.expectedCost}</Text>
+            </View>
+            <View style={styles.metaRow}>
+              <Text style={styles.metaLabel}>예상 소요 기간</Text>
+              <Text style={styles.metaValue}>{confirmedEstimate?.expectedDuration}</Text>
+            </View>
+            <View style={styles.metaRow}>
+              <Text style={styles.metaLabel}>확정 수리 항목</Text>
+              {confirmedEstimate?.repairItems.map((item) => (
+                <Text key={item} style={styles.confirmedListItem}>
+                  • {item}
+                </Text>
+              ))}
+            </View>
+          </View>
+        ) : null}
+
+        <View style={styles.card}>
           <Text style={styles.sectionTitle}>수리 타임라인</Text>
           <View style={styles.timelineList}>
             {timelineSteps.map((step, index) => {
@@ -169,11 +205,11 @@ export default function RepairStatusScreen({ navigation }: Props) {
           <Text style={styles.sectionTitle}>예상 수리 정보</Text>
           <View style={styles.metaRow}>
             <Text style={styles.metaLabel}>예상 수리 항목</Text>
-            <Text style={styles.metaValue}>후륜 브레이크 패드 교체</Text>
+            <Text style={styles.metaValue}>{confirmedEstimate ? confirmedEstimate.repairItems[0] : '후륜 브레이크 패드 교체'}</Text>
           </View>
           <View style={styles.metaRow}>
             <Text style={styles.metaLabel}>예상 완료 시간</Text>
-            <Text style={styles.metaValue}>오늘 18:00</Text>
+            <Text style={styles.metaValue}>{confirmedEstimate ? confirmedEstimate.expectedDuration : '오늘 18:00'}</Text>
           </View>
         </View>
 
@@ -258,6 +294,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginBottom: spacing.sm,
   },
+  confirmedSectionTitle: {
+    marginTop: spacing.md,
+  },
   metaRow: {
     marginTop: spacing.xs,
   },
@@ -272,6 +311,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 2,
   },
+  confirmedListItem: {
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: 4,
+  },
   badge: {
     alignSelf: 'flex-start',
     backgroundColor: '#DBEAFE',
@@ -284,9 +329,6 @@ const styles = StyleSheet.create({
     color: '#1E3A8A',
     fontSize: 12,
     fontWeight: '700',
-  },
-  estimateSection: {
-    marginBottom: spacing.lg,
   },
   estimateHeaderRow: {
     alignItems: 'center',
