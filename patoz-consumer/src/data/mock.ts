@@ -1,7 +1,9 @@
 export type Device = {
   id: string;
+  brand: string;
   modelName: string;
   serialNumber: string;
+  color: string;
   registeredYear: number;
   imageUri?: string;
 };
@@ -16,9 +18,13 @@ export type HistoryItem = {
 export const initialDevices: Device[] = [
   {
     id: '1',
+    brand: 'PATOZ',
     modelName: 'EZ-BIKE S1',
     serialNumber: 'ST12345678',
+    color: 'Midnight Navy',
     registeredYear: 2024,
+    imageUri:
+      'https://images.unsplash.com/photo-1544191696-102dbdaeeaa0?auto=format&fit=crop&w=900&q=80',
   },
 ];
 
@@ -28,7 +34,7 @@ export const tabLabels = {
   history: '정비 이력',
 };
 
-export const homeActions = ['간단 점검', '정비 이력', '도난 신고', '안전 가이드'] as const;
+export const homeActions = ['AI 간편 점검', '수리 진행 현황', '정비 이력', '도난 신고'] as const;
 
 export const initialHistory: HistoryItem[] = [
   {

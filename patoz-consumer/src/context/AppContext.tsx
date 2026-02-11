@@ -73,8 +73,10 @@ export function AppProvider({ children }: AppProviderProps) {
 
     const newDevice: Device = {
       id: Date.now().toString(),
+      brand: 'PATOZ',
       modelName: 'EZ-BIKE S1',
       serialNumber: trimmedSerialNumber,
+      color: 'Midnight Navy',
       registeredYear: 2024,
     };
 
