@@ -1,16 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
-import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { useFocusEffect } from '@react-navigation/native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppContext } from '../context/AppContext';
 import { homeActions } from '../data/mock';
-import { RootTabParamList } from '../navigation/types';
+import { RootStackParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../styles/theme';
 
-type Props = BottomTabScreenProps<RootTabParamList, 'DeviceDashboard'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'DeviceDashboard'>;
 
 const actionIcons: Record<(typeof homeActions)[number], keyof typeof Ionicons.glyphMap> = {
   'AI 간편 점검': 'sparkles-outline',
@@ -88,7 +88,7 @@ export default function DeviceDashboardScreen({ navigation, route }: Props) {
       ) : (
         <View style={styles.emptyStateCard}>
           <Text style={styles.emptyTitle}>선택된 기기를 찾을 수 없습니다.</Text>
-          <Pressable onPress={() => navigation.navigate('Home')} style={styles.backButton}>
+          <Pressable onPress={() => navigation.navigate('MainTabs', { screen: 'Home' })} style={styles.backButton}>
             <Text style={styles.backButtonText}>목록으로 돌아가기</Text>
           </Pressable>
         </View>

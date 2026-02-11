@@ -1,14 +1,18 @@
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import { useFocusEffect } from '@react-navigation/native';
+import { CompositeScreenProps, useFocusEffect } from '@react-navigation/native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useCallback, useState } from 'react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppContext } from '../context/AppContext';
-import { RootTabParamList } from '../navigation/types';
+import { RootStackParamList, RootTabParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../styles/theme';
 
-type Props = BottomTabScreenProps<RootTabParamList, 'Home'>;
+type Props = CompositeScreenProps<
+  BottomTabScreenProps<RootTabParamList, 'Home'>,
+  NativeStackScreenProps<RootStackParamList>
+>;
 
 export default function HomeScreen({ navigation }: Props) {
   const { devices, selectedDeviceId, addDevice, setSelectedDeviceId, moveDeviceUp, moveDeviceDown } = useAppContext();

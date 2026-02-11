@@ -1,16 +1,16 @@
-import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { useFocusEffect } from '@react-navigation/native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppContext } from '../context/AppContext';
 import { HistoryItem } from '../data/mock';
-import { RootTabParamList } from '../navigation/types';
+import { RootStackParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../styles/theme';
 import { ui } from '../styles/ui';
 
-type Props = BottomTabScreenProps<RootTabParamList, 'MaintenanceHistory'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'MaintenanceHistory'>;
 
 type StatusStyle = {
   badgeBg: string;
