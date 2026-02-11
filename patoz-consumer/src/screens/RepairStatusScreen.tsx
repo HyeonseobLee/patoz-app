@@ -4,68 +4,112 @@ import React, { useCallback, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import EstimateCard, { Estimate } from '../components/EstimateCard';
 import { useAppContext } from '../context/AppContext';
+import { estimateMockData, EstimateDetail, RepairStage } from '../data/mock';
 import { RootTabParamList } from '../navigation/types';
 import { colors, radius, spacing } from '../styles/theme';
+import EstimateCard from '../components/EstimateCard';
 
 type Props = BottomTabScreenProps<RootTabParamList, 'RepairStatus'>;
 
 type RepairStatus = '접수 완료' | '수리 중' | '수리 완료' | '수령 완료';
 
-type EstimateDetail = Estimate & {
-  repairItems: string[];
+const timelineSteps: RepairStatus[] = ['접수 완료', '수리 중', '수리 완료', '수령 완료'];
+const stageToStatusLabel: Record<RepairStage, RepairStatus> = {
+  REGISTERED: '접수 완료',
+  REPAIRING: '수리 중',
+  REPAIR_COMPLETED: '수리 완료',
+  PICKED_UP: '수령 완료',
 };
 
-const timelineSteps: RepairStatus[] = ['접수 완료', '수리 중', '수리 완료', '수령 완료'];
+
 const finalStep: RepairStatus = '수령 완료';
 
-const estimateMockData: EstimateDetail[] = [
-  {
-    id: 'est-1',
-    vendorName: 'PATOZ 강남 파트너센터',
-    expectedCost: '₩180,000',
-    expectedDuration: '당일 5시간',
-    rating: 4.8,
-    isNew: true,
-    repairItems: ['후륜 브레이크 패드 교체', '브레이크 오일 점검', '휠 정렬 보정'],
-  },
-  {
-    id: 'est-2',
-    vendorName: '스피드 모빌리티 수리소',
-    expectedCost: '₩165,000',
-    expectedDuration: '1일',
-    rating: 4.6,
-    repairItems: ['후륜 브레이크 패드 교체', '모터 하우징 진동 점검'],
-  },
-  {
-    id: 'est-3',
-    vendorName: '프리미엄 이바이크 케어',
-    expectedCost: '₩210,000',
-    expectedDuration: '당일 3시간',
-    rating: 4.9,
-    isNew: true,
-    repairItems: ['후륜 브레이크 패드 교체', '디스크 로터 연마', '구동계 정밀 세척'],
-  },
-];
+function IncomingEstimateSection({ onSelectEstimate }: { onSelectEstimate: (estimate: EstimateDetail) => void }) {
+  return (
+    <View style={styles.card}>
+      <View style={styles.estimateHeaderRow}>
+        <Text style={styles.sectionTitle}>도착한 견적서</Text>
+        <View style={styles.estimateCountBadge}>
+          <Text style={styles.estimateCountText}>{estimateMockData.length}건</Text>
+        </View>
+      </View>
+
+      <View style={styles.estimateList}>
+        {estimateMockData.map((estimate) => (
+          <EstimateCard estimate={estimate} key={estimate.id} onPress={() => onSelectEstimate(estimate)} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function ConfirmedVendorSection({ confirmedEstimate }: { confirmedEstimate: EstimateDetail }) {
+  return (
+    <View style={styles.card}>
+      <Text style={styles.sectionLabel}>서비스 센터</Text>
+      <Text style={styles.sectionTitle}>{confirmedEstimate.vendorName}</Text>
+
+      <View style={styles.metaRow}>
+        <Text style={styles.metaLabel}>담당 기사</Text>
+        <Text style={styles.metaValue}>{confirmedEstimate.engineerName}</Text>
+      </View>
+      <View style={styles.metaRow}>
+        <Text style={styles.metaLabel}>연락처</Text>
+        <Text style={styles.metaValue}>{confirmedEstimate.phoneNumber}</Text>
+      </View>
+
+      <Text style={[styles.sectionTitle, styles.confirmedSectionTitle]}>확정된 견적 내용</Text>
+      <View style={styles.metaRow}>
+        <Text style={styles.metaLabel}>확정 수리 비용</Text>
+        <Text style={styles.metaValue}>{confirmedEstimate.expectedCost}</Text>
+      </View>
+      <View style={styles.metaRow}>
+        <Text style={styles.metaLabel}>예상 소요 기간</Text>
+        <Text style={styles.metaValue}>{confirmedEstimate.expectedDuration}</Text>
+      </View>
+      <View style={styles.metaRow}>
+        <Text style={styles.metaLabel}>확정 수리 항목</Text>
+        {confirmedEstimate.repairItems.map((item) => (
+          <Text key={item} style={styles.confirmedListItem}>
+            • {item}
+          </Text>
+        ))}
+      </View>
+    </View>
+  );
+}
 
 export default function RepairStatusScreen({ navigation }: Props) {
-  const { selectedDeviceId, updateDeviceServiceStatus } = useAppContext();
+  const { selectedDevice, selectedDeviceId, updateDeviceServiceStatus } = useAppContext();
   const [, setRefreshKey] = useState(0);
-  const [repairStatus, setRepairStatus] = useState<RepairStatus>('접수 완료');
+  const [repairStage, setRepairStage] = useState<RepairStage>('REGISTERED');
   const [selectedEstimate, setSelectedEstimate] = useState<EstimateDetail | null>(null);
   const [confirmedEstimate, setConfirmedEstimate] = useState<EstimateDetail | null>(null);
 
+  const repairStatus = stageToStatusLabel[repairStage];
+
   const currentStepIndex = timelineSteps.indexOf(repairStatus);
   const isFinalState = repairStatus === finalStep;
-  const isEstimateSectionVisible = repairStatus === '접수 완료';
-  const isConfirmedSectionVisible = repairStatus === '수리 중' && Boolean(confirmedEstimate);
+  const isEstimateSectionVisible = repairStage === 'REGISTERED';
+  const isConfirmedSectionVisible = repairStage === 'REPAIRING' && Boolean(confirmedEstimate);
 
   useFocusEffect(
     useCallback(() => {
       setRefreshKey((prev) => prev + 1);
+
+      if (selectedDevice?.serviceStatus === 'In-Repair') {
+        setRepairStage('REPAIRING');
+      } else if (selectedDevice?.serviceStatus === 'Repair-Finished') {
+        setRepairStage('REPAIR_COMPLETED');
+      } else if (selectedDevice?.serviceStatus === 'Received') {
+        setRepairStage('PICKED_UP');
+      } else {
+        setRepairStage('REGISTERED');
+      }
+
       return () => {};
-    }, [])
+    }, [selectedDevice?.serviceStatus])
   );
 
   const handleSelectEstimate = () => {
@@ -81,7 +125,7 @@ export default function RepairStatusScreen({ navigation }: Props) {
       {
         text: '시작하기',
         onPress: () => {
-          setRepairStatus('수리 중');
+          setRepairStage('REPAIRING');
           setConfirmedEstimate(selectedEstimate);
 
           if (selectedDeviceId) {
@@ -100,75 +144,17 @@ export default function RepairStatusScreen({ navigation }: Props) {
         <Text style={styles.pageTitle}>수리 진행 현황</Text>
 
         <View style={styles.card}>
-          <Text style={styles.sectionLabel}>서비스 센터</Text>
-          <Text style={styles.sectionTitle}>PATOZ Service Seoul</Text>
-
-          <View style={styles.metaRow}>
-            <Text style={styles.metaLabel}>담당 기사</Text>
-            <Text style={styles.metaValue}>홍길동 기사</Text>
-          </View>
-          <View style={styles.metaRow}>
-            <Text style={styles.metaLabel}>연락처</Text>
-            <Text style={styles.metaValue}>02-1234-5678</Text>
-          </View>
-          <View style={styles.metaRow}>
-            <Text style={styles.metaLabel}>선정 업체</Text>
-            <Text style={styles.metaValue}>{confirmedEstimate?.vendorName ?? '-'}</Text>
-          </View>
-
+          <Text style={styles.sectionTitle}>진행 상태</Text>
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{isFinalState ? `${repairStatus} (최종 완료)` : repairStatus}</Text>
           </View>
         </View>
 
         {isEstimateSectionVisible ? (
-          <View style={styles.card}>
-            <View style={styles.estimateHeaderRow}>
-              <Text style={styles.sectionTitle}>도착한 견적서</Text>
-              <View style={styles.estimateCountBadge}>
-                <Text style={styles.estimateCountText}>{estimateMockData.length}건</Text>
-              </View>
-            </View>
-
-            <View style={styles.estimateList}>
-              {estimateMockData.map((estimate) => (
-                <EstimateCard estimate={estimate} key={estimate.id} onPress={() => setSelectedEstimate(estimate)} />
-              ))}
-            </View>
-          </View>
+          <IncomingEstimateSection onSelectEstimate={setSelectedEstimate} />
         ) : null}
 
-        {isConfirmedSectionVisible ? (
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>선택한 업체 정보</Text>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>업체명</Text>
-              <Text style={styles.metaValue}>{confirmedEstimate?.vendorName}</Text>
-            </View>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>평점</Text>
-              <Text style={styles.metaValue}>⭐ {confirmedEstimate?.rating.toFixed(1)}</Text>
-            </View>
-
-            <Text style={[styles.sectionTitle, styles.confirmedSectionTitle]}>확정된 견적 내용</Text>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>확정 수리 비용</Text>
-              <Text style={styles.metaValue}>{confirmedEstimate?.expectedCost}</Text>
-            </View>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>예상 소요 기간</Text>
-              <Text style={styles.metaValue}>{confirmedEstimate?.expectedDuration}</Text>
-            </View>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>확정 수리 항목</Text>
-              {confirmedEstimate?.repairItems.map((item) => (
-                <Text key={item} style={styles.confirmedListItem}>
-                  • {item}
-                </Text>
-              ))}
-            </View>
-          </View>
-        ) : null}
+        {isConfirmedSectionVisible && confirmedEstimate ? <ConfirmedVendorSection confirmedEstimate={confirmedEstimate} /> : null}
 
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>수리 타임라인</Text>

@@ -1,4 +1,5 @@
 import { Device } from '../types';
+import { Estimate } from '../components/EstimateCard';
 
 export type HistoryItem = {
   id: string;
@@ -8,6 +9,68 @@ export type HistoryItem = {
   status: string;
   description: string;
   notes?: string;
+};
+
+export type RepairStage = 'REGISTERED' | 'REPAIRING' | 'REPAIR_COMPLETED' | 'PICKED_UP';
+
+export type EstimateDetail = Estimate & {
+  repairItems: string[];
+  engineerName: string;
+  phoneNumber: string;
+};
+
+export const estimateMockData: EstimateDetail[] = [
+  {
+    id: 'est-1',
+    vendorName: 'PATOZ 강남 파트너센터',
+    expectedCost: '₩180,000',
+    expectedDuration: '당일 5시간',
+    rating: 4.8,
+    isNew: true,
+    repairItems: ['후륜 브레이크 패드 교체', '브레이크 오일 점검', '휠 정렬 보정'],
+    engineerName: '홍길동 기사',
+    phoneNumber: '02-1234-5678',
+  },
+  {
+    id: 'est-2',
+    vendorName: '스피드 모빌리티 수리소',
+    expectedCost: '₩165,000',
+    expectedDuration: '1일',
+    rating: 4.6,
+    repairItems: ['후륜 브레이크 패드 교체', '모터 하우징 진동 점검'],
+    engineerName: '김태영 기사',
+    phoneNumber: '02-9876-1111',
+  },
+  {
+    id: 'est-3',
+    vendorName: '프리미엄 이바이크 케어',
+    expectedCost: '₩210,000',
+    expectedDuration: '당일 3시간',
+    rating: 4.9,
+    isNew: true,
+    repairItems: ['후륜 브레이크 패드 교체', '디스크 로터 연마', '구동계 정밀 세척'],
+    engineerName: '박하늘 기사',
+    phoneNumber: '031-888-2222',
+  },
+];
+
+export const repairStatusMockSamples: Record<RepairStage, { title: string; confirmedEstimate: EstimateDetail | null }> = {
+  REGISTERED: {
+    title: '접수 완료 상태 샘플',
+    confirmedEstimate: null,
+  },
+  REPAIRING: {
+    title: '수리 중 상태 샘플',
+    confirmedEstimate: estimateMockData[0],
+  },
+  REPAIR_COMPLETED: {
+    title: '수리 완료 상태 샘플',
+    confirmedEstimate: estimateMockData[0],
+  },
+  PICKED_UP: {
+    title: '수령 완료 상태 샘플',
+    confirmedEstimate: estimateMockData[0],
+  },
 };
 
 export const initialDevices: Device[] = [
