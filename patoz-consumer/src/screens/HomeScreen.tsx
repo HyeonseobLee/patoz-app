@@ -48,7 +48,15 @@ export default function HomeScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} style={styles.container}>
-        <Text style={styles.pageTitle}>내 기기</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.pageTitle}>내 기기</Text>
+          <View style={styles.headerActions}>
+            <Text style={styles.deviceCountText}>총 {devices.length}대</Text>
+            <Pressable onPress={() => setIsEditMode((prev) => !prev)} style={styles.editToggleButton}>
+              <Text style={styles.editToggleText}>{isEditMode ? '편집 완료' : '순서 편집'}</Text>
+            </Pressable>
+          </View>
+        </View>
 
         <View style={styles.registerCard}>
           <View style={styles.registerRow}>
@@ -67,12 +75,9 @@ export default function HomeScreen({ navigation }: Props) {
           <Text style={styles.microcopy}>여러 대의 기기를 등록해 관리할 수 있어요.</Text>
         </View>
 
-        <View style={styles.editSection}>
-          <Pressable onPress={() => setIsEditMode((prev) => !prev)} style={styles.editToggleButton}>
-            <Text style={styles.editToggleText}>{isEditMode ? '편집 완료' : '순서 편집'}</Text>
-          </Pressable>
-          {isEditMode ? <Text style={styles.editHint}>드래그 대신 버튼으로 순서를 변경할 수 있어요.</Text> : null}
-        </View>
+        {isEditMode ? (
+          <Text style={styles.editHint}>드래그 대신 버튼으로 순서를 변경할 수 있어요.</Text>
+        ) : null}
 
         {devices.length === 0 ? (
           <View style={styles.emptyStateCard}>
@@ -136,12 +141,27 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingBottom: spacing.xl,
   },
+  headerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+  },
   pageTitle: {
     color: colors.textPrimary,
     fontSize: 22,
     fontWeight: '800',
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.sm,
+  },
+  headerActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  deviceCountText: {
+    color: colors.textMuted,
+    fontSize: 13,
+    fontWeight: '700',
   },
   registerCard: {
     backgroundColor: colors.white,
@@ -190,10 +210,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 12,
   },
-  editSection: {
-    gap: spacing.xs,
-    marginHorizontal: spacing.lg,
-  },
   editToggleButton: {
     alignSelf: 'flex-start',
     backgroundColor: colors.white,
@@ -211,6 +227,7 @@ const styles = StyleSheet.create({
   editHint: {
     color: '#64748B',
     fontSize: 12,
+    marginHorizontal: spacing.lg,
   },
   emptyStateCard: {
     backgroundColor: colors.white,

@@ -46,7 +46,7 @@ export default function DeviceDashboardScreen({ navigation, route }: Props) {
     }
 
     if (action === '정비 이력') {
-      navigation.navigate('MaintenanceHistory');
+      navigation.navigate('MaintenanceHistory', { deviceId: route.params.deviceId });
       return;
     }
 

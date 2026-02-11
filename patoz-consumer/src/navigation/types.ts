@@ -1,5 +1,7 @@
 export type RootTabParamList = {
   Home: undefined;
+  StoreFinder: undefined;
+  Profile: undefined;
   DeviceDashboard: {
     deviceId: string;
   };
@@ -8,7 +10,11 @@ export type RootTabParamList = {
     intake: string;
     symptoms: string;
   };
-  MaintenanceHistory: undefined;
+  MaintenanceHistory:
+    | {
+        deviceId?: string;
+      }
+    | undefined;
   MaintenanceDetail: {
     historyId: string;
   };
