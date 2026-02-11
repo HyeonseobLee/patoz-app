@@ -9,11 +9,14 @@ import { colors, radius, spacing } from '../styles/theme';
 
 type Props = BottomTabScreenProps<RootTabParamList, 'RepairStatus'>;
 
-const timelineSteps = ['접수 완료', '점검 중', '부품 준비', '수리 진행 중', '완료 예정'] as const;
-const currentStep = '수리 진행 중';
+const timelineSteps = ['접수 완료', '점검 중', '부품 준비', '수리 진행 중', '수리 완료', '수령 완료'] as const;
+const finalStep: (typeof timelineSteps)[number] = '수령 완료';
+const currentStep: (typeof timelineSteps)[number] = '수리 완료';
 
 export default function RepairStatusScreen({ navigation }: Props) {
   const [, setRefreshKey] = useState(0);
+  const currentStepIndex = timelineSteps.indexOf(currentStep);
+  const isFinalState = currentStep === finalStep;
 
   useFocusEffect(
     useCallback(() => {
@@ -41,7 +44,7 @@ export default function RepairStatusScreen({ navigation }: Props) {
           </View>
 
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>{currentStep}</Text>
+            <Text style={styles.badgeText}>{isFinalState ? `${currentStep} (최종 완료)` : currentStep}</Text>
           </View>
         </View>
 
@@ -49,12 +52,25 @@ export default function RepairStatusScreen({ navigation }: Props) {
           <Text style={styles.sectionTitle}>수리 타임라인</Text>
           <View style={styles.timelineList}>
             {timelineSteps.map((step, index) => {
-              const isActive = step === currentStep;
+              const isCompleted = index < currentStepIndex;
+              const isActive = index === currentStepIndex;
 
               return (
                 <View key={step} style={styles.timelineRow}>
-                  <View style={[styles.timelineDot, isActive && styles.timelineDotActive]} />
-                  <Text style={[styles.timelineText, isActive && styles.timelineTextActive]}>
+                  <View
+                    style={[
+                      styles.timelineDot,
+                      isCompleted && styles.timelineDotCompleted,
+                      isActive && styles.timelineDotActive,
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.timelineText,
+                      isCompleted && styles.timelineTextCompleted,
+                      isActive && styles.timelineTextActive,
+                    ]}
+                  >
                     {index + 1}. {step}
                   </Text>
                 </View>
@@ -165,6 +181,9 @@ const styles = StyleSheet.create({
     height: 10,
     width: 10,
   },
+  timelineDotCompleted: {
+    backgroundColor: '#93C5FD',
+  },
   timelineDotActive: {
     backgroundColor: colors.brand,
     height: 12,
@@ -174,6 +193,10 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontSize: 14,
     fontWeight: '500',
+  },
+  timelineTextCompleted: {
+    color: '#334155',
+    fontWeight: '600',
   },
   timelineTextActive: {
     color: colors.textPrimary,

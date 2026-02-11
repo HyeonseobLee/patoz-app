@@ -11,7 +11,7 @@ import { colors, radius, spacing } from '../styles/theme';
 type Props = BottomTabScreenProps<RootTabParamList, 'Home'>;
 
 export default function HomeScreen({ navigation }: Props) {
-  const { devices, selectedDeviceId, addDevice, setSelectedDeviceId, moveDeviceUp, moveDeviceDown } = useAppContext();
+  const { devices, addDevice, setSelectedDeviceId, moveDeviceUp, moveDeviceDown } = useAppContext();
   const [serialNumber, setSerialNumber] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
   const [, setRefreshKey] = useState(0);
@@ -45,17 +45,27 @@ export default function HomeScreen({ navigation }: Props) {
     navigation.navigate('DeviceDashboard', { deviceId });
   };
 
+  const isRepairHighlighted = (status: string) => {
+    return status === 'In-Repair' || status === 'Repair-Finished';
+  };
+
+  const getRepairBadgeLabel = (status: string) => {
+    if (status === 'In-Repair') {
+      return '수리 중';
+    }
+
+    if (status === 'Repair-Finished') {
+      return '수리 완료 · 수령 대기';
+    }
+
+    return null;
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} style={styles.container}>
         <View style={styles.headerRow}>
           <Text style={styles.pageTitle}>내 기기</Text>
-          <View style={styles.headerActions}>
-            <Text style={styles.deviceCountText}>총 {devices.length}대</Text>
-            <Pressable onPress={() => setIsEditMode((prev) => !prev)} style={styles.editToggleButton}>
-              <Text style={styles.editToggleText}>{isEditMode ? '편집 완료' : '순서 편집'}</Text>
-            </Pressable>
-          </View>
         </View>
 
         <View style={styles.registerCard}>
@@ -75,6 +85,13 @@ export default function HomeScreen({ navigation }: Props) {
           <Text style={styles.microcopy}>여러 대의 기기를 등록해 관리할 수 있어요.</Text>
         </View>
 
+        <View style={styles.listMetaRow}>
+          <Text style={styles.deviceCountText}>총 {devices.length}대</Text>
+          <Pressable onPress={() => setIsEditMode((prev) => !prev)} style={styles.editToggleButton}>
+            <Text style={styles.editToggleText}>{isEditMode ? '편집 완료' : '순서 편집'}</Text>
+          </Pressable>
+        </View>
+
         {isEditMode ? (
           <Text style={styles.editHint}>드래그 대신 버튼으로 순서를 변경할 수 있어요.</Text>
         ) : null}
@@ -87,18 +104,24 @@ export default function HomeScreen({ navigation }: Props) {
         ) : (
           <View style={styles.deviceList}>
             {devices.map((device, index) => {
-              const isSelected = selectedDeviceId === device.id;
+              const isHighlighted = isRepairHighlighted(device.serviceStatus);
+              const repairBadgeLabel = getRepairBadgeLabel(device.serviceStatus);
 
               return (
                 <Pressable
                   key={device.id}
                   onPress={() => handleCardPress(device.id)}
-                  style={[styles.deviceCard, isSelected && styles.selectedDeviceCard]}
+                  style={[styles.deviceCard, isHighlighted && styles.repairHighlightedCard]}
                 >
                   {device.imageUri ? <Image source={{ uri: device.imageUri }} style={styles.deviceImage} /> : <View style={styles.imagePlaceholder} />}
                   <View style={styles.cardBody}>
                     <Text style={styles.brandText}>{device.brand}</Text>
                     <Text style={styles.modelName}>{device.modelName}</Text>
+                    {repairBadgeLabel ? (
+                      <View style={styles.repairStatusBadge}>
+                        <Text style={styles.repairStatusBadgeText}>{repairBadgeLabel}</Text>
+                      </View>
+                    ) : null}
                     <Text style={styles.infoText}>색상: {device.color}</Text>
                     <Text style={styles.infoText}>시리얼 넘버: {device.serialNumber}</Text>
                     <Text style={styles.infoText}>등록 연도: {device.registeredYear}</Text>
@@ -142,9 +165,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   headerRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     marginHorizontal: spacing.lg,
     marginTop: spacing.sm,
   },
@@ -153,10 +173,11 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
   },
-  headerActions: {
+  listMetaRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: spacing.xs,
+    justifyContent: 'space-between',
+    marginHorizontal: spacing.lg,
   },
   deviceCountText: {
     color: colors.textMuted,
@@ -265,9 +286,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  selectedDeviceCard: {
+  repairHighlightedCard: {
     borderColor: '#1E3A8A',
     borderWidth: 2,
+    shadowColor: '#1E3A8A',
     shadowOpacity: 0.08,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
@@ -297,6 +319,19 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 18,
     fontWeight: '800',
+  },
+  repairStatusBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#DBEAFE',
+    borderRadius: 999,
+    marginTop: 2,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+  },
+  repairStatusBadgeText: {
+    color: '#1E3A8A',
+    fontSize: 11,
+    fontWeight: '700',
   },
   infoText: {
     color: colors.textMuted,
