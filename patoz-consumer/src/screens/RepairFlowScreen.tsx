@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useMemo, useState } from 'react';
@@ -39,7 +40,7 @@ export default function RepairFlowScreen({ navigation }: Props) {
 
   const handleSubmit = () => {
     if (selectedIssues.length === 0) {
-      Alert.alert('알림', '점검 항목을 1개 이상 선택해주세요.');
+      Alert.alert('알림', '진단 항목을 1개 이상 선택해주세요.');
       return;
     }
 
@@ -56,10 +57,10 @@ export default function RepairFlowScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.pageTitle}>AI 간편 점검</Text>
+        <Text style={styles.pageTitle}>AI 간편 진단</Text>
 
         <View style={[ui.card, styles.formCard]}>
-          <Text style={styles.formTitle}>점검 항목 선택</Text>
+          <Text style={styles.formTitle}>진단 항목 선택</Text>
           <Text style={styles.helperText}>해당되는 항목을 모두 선택해주세요.</Text>
 
           <View style={styles.checkboxList}>
@@ -78,9 +79,9 @@ export default function RepairFlowScreen({ navigation }: Props) {
           {hasEtcSelected ? (
             <TextInput
               multiline
-              numberOfLines={3}
+              numberOfLines={6}
               onChangeText={setEtcDetail}
-              placeholder="기타 점검 내용을 입력해주세요"
+              placeholder="기타 진단 내용을 입력해주세요"
               placeholderTextColor="#94A3B8"
               style={[styles.input, styles.textArea]}
               textAlignVertical="top"
@@ -89,7 +90,8 @@ export default function RepairFlowScreen({ navigation }: Props) {
           ) : null}
 
           <Pressable onPress={handleSubmit} style={styles.submitButton}>
-            <Text style={styles.submitButtonText}>점검 완료</Text>
+            <Ionicons color={colors.white} name="sparkles" size={18} style={styles.submitButtonIcon} />
+            <Text style={styles.submitButtonText}>AI 진단 시작</Text>
           </Pressable>
         </View>
       </View>
@@ -168,12 +170,13 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   textArea: {
-    minHeight: 92,
+    minHeight: 230,
   },
   submitButton: {
     alignItems: 'center',
     backgroundColor: colors.brand,
     borderRadius: radius.lg,
+    flexDirection: 'row',
     height: 56,
     justifyContent: 'center',
     marginTop: spacing.sm,
@@ -182,6 +185,9 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 3,
+  },
+  submitButtonIcon: {
+    marginRight: spacing.xs,
   },
   submitButtonText: {
     color: colors.white,
