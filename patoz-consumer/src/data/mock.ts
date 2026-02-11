@@ -1,13 +1,4 @@
-export type Device = {
-  id: string;
-  brand: string;
-  modelName: string;
-  serialNumber: string;
-  color: string;
-  registeredYear: number;
-  serviceStatus: 'In-Repair' | 'Repair-Finished' | 'Received';
-  imageUri?: string;
-};
+import { Device } from '../types';
 
 export type HistoryItem = {
   id: string;

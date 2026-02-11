@@ -1,6 +1,7 @@
 import React, { createContext, ReactNode, useContext, useMemo, useState } from 'react';
 
-import { Device, HistoryItem, initialDevices, initialHistory } from '../data/mock';
+import { HistoryItem, initialDevices, initialHistory } from '../data/mock';
+import { Device, ServiceStatus } from '../types';
 
 type InquiryInput = {
   intake: string;
@@ -17,6 +18,7 @@ type AppContextValue = {
   setSelectedDeviceId: (id: string) => void;
   moveDeviceUp: (id: string) => void;
   moveDeviceDown: (id: string) => void;
+  updateDeviceServiceStatus: (id: string, status: ServiceStatus | null) => void;
 };
 
 const AppContext = createContext<AppContextValue | undefined>(undefined);
@@ -60,6 +62,8 @@ export function AppProvider({ children }: AppProviderProps) {
       return;
     }
 
+    updateDeviceServiceStatus(targetDeviceId, 'In-Repair');
+
     const newItem: HistoryItem = {
       id: `${Date.now()}`,
       deviceId: targetDeviceId,
@@ -87,11 +91,27 @@ export function AppProvider({ children }: AppProviderProps) {
       serialNumber: trimmedSerialNumber,
       color: 'Midnight Navy',
       registeredYear: 2024,
-      serviceStatus: 'In-Repair',
+      serviceStatus: null,
     };
 
     setDevices((prev) => [...prev, newDevice]);
     setSelectedDeviceIdState(newDevice.id);
+  };
+
+
+  const updateDeviceServiceStatus = (id: string, status: ServiceStatus | null) => {
+    setDevices((prev) =>
+      prev.map((device) => {
+        if (device.id !== id) {
+          return device;
+        }
+
+        return {
+          ...device,
+          serviceStatus: status,
+        };
+      })
+    );
   };
 
   const setSelectedDeviceId = (id: string) => {
@@ -127,6 +147,7 @@ export function AppProvider({ children }: AppProviderProps) {
       setSelectedDeviceId,
       moveDeviceUp,
       moveDeviceDown,
+      updateDeviceServiceStatus,
     }),
     [devices, selectedDeviceId, selectedDevice, history]
   );
