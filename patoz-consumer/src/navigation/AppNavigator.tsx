@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
-import React from 'react';
+import React, { useMemo } from 'react';
+import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { tabLabels } from '../data/mock';
 import DeviceDashboardScreen from '../screens/DeviceDashboardScreen';
@@ -19,7 +21,7 @@ import { RootTabParamList } from './types';
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
 const iconByRoute: Partial<Record<keyof RootTabParamList, keyof typeof Ionicons.glyphMap>> = {
-  Home: 'phone-portrait-outline',
+  Home: 'bicycle-outline',
   StoreFinder: 'map-outline',
   Profile: 'person-outline',
 };
@@ -33,39 +35,59 @@ const hiddenRoutes: (keyof RootTabParamList)[] = [
   'MaintenanceHistory',
 ];
 
+const TAB_BAR_BASE_STYLE = {
+  borderTopColor: '#E2E8F0',
+  borderTopWidth: 1,
+  backgroundColor: '#FFFFFF',
+  paddingTop: 8,
+};
+
+const TAB_BAR_ITEM_STYLE = {
+  flex: 1,
+  minWidth: 0,
+  alignItems: 'center' as const,
+  justifyContent: 'center' as const,
+};
+
+const ICON_SIZE = 24;
+
 export default function AppNavigator() {
+  const insets = useSafeAreaInsets();
+
+  const baseTabBarHeight = Platform.select({
+    ios: 56,
+    default: 60,
+  });
+
+  const safeBottomPadding = Math.max(insets.bottom, 6);
+
+  const commonScreenOptions = useMemo(
+    () => ({
+      headerShown: false,
+      tabBarActiveTintColor: colors.brand,
+      tabBarInactiveTintColor: '#94A3B8',
+      tabBarHideOnKeyboard: true,
+      tabBarShowLabel: false,
+      tabBarItemStyle: TAB_BAR_ITEM_STYLE,
+      tabBarIconStyle: undefined,
+    }),
+    [],
+  );
+
   return (
     <NavigationContainer>
       <Tab.Navigator
         screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarActiveTintColor: colors.brand,
-          tabBarInactiveTintColor: '#94A3B8',
-          tabBarHideOnKeyboard: true,
-          tabBarLabelStyle: {
-            fontSize: 12,
-            fontWeight: '600',
-            marginBottom: 2,
-          },
-          tabBarItemStyle: {
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingVertical: 6,
-          },
-          tabBarIconStyle: {
-            marginTop: 2,
-          },
+          ...commonScreenOptions,
           tabBarStyle: {
-            borderTopColor: '#E2E8F0',
-            borderTopWidth: 1,
+            ...TAB_BAR_BASE_STYLE,
+            height: baseTabBarHeight + safeBottomPadding,
+            paddingBottom: safeBottomPadding,
             display: hiddenRoutes.includes(route.name) ? 'none' : 'flex',
-            height: 62,
-            paddingBottom: 6,
-            paddingTop: 6,
           },
-          tabBarIcon: ({ color, size }) => {
+          tabBarIcon: ({ color }) => {
             const iconName = iconByRoute[route.name as keyof RootTabParamList];
-            return iconName ? <Ionicons color={color} name={iconName} size={size} /> : null;
+            return iconName ? <Ionicons color={color} name={iconName} size={ICON_SIZE} /> : null;
           },
         })}
       >
