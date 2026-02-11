@@ -10,9 +10,13 @@ type InquiryInput = {
 type AppContextValue = {
   devices: Device[];
   selectedDeviceId: string | null;
+  selectedDevice: Device | null;
   history: HistoryItem[];
   addInquiry: (input: InquiryInput) => void;
   addDevice: (serialNumber: string) => void;
+  setSelectedDeviceId: (id: string) => void;
+  moveDeviceUp: (id: string) => void;
+  moveDeviceDown: (id: string) => void;
 };
 
 const AppContext = createContext<AppContextValue | undefined>(undefined);
@@ -25,9 +29,21 @@ const toIsoDate = (date: Date): string => {
   return date.toISOString().split('T')[0];
 };
 
+const moveDevice = (items: Device[], from: number, to: number) => {
+  if (from < 0 || to < 0 || from >= items.length || to >= items.length) {
+    return items;
+  }
+
+  const updated = [...items];
+  const [target] = updated.splice(from, 1);
+  updated.splice(to, 0, target);
+
+  return updated;
+};
+
 export function AppProvider({ children }: AppProviderProps) {
   const [devices, setDevices] = useState<Device[]>(initialDevices);
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(initialDevices[0]?.id ?? null);
+  const [selectedDeviceId, setSelectedDeviceIdState] = useState<string | null>(initialDevices[0]?.id ?? null);
   const [history, setHistory] = useState<HistoryItem[]>(initialHistory);
 
   const addInquiry = ({ intake, symptoms }: InquiryInput) => {
@@ -63,18 +79,44 @@ export function AppProvider({ children }: AppProviderProps) {
     };
 
     setDevices((prev) => [...prev, newDevice]);
-    setSelectedDeviceId(newDevice.id);
+    setSelectedDeviceIdState(newDevice.id);
   };
+
+  const setSelectedDeviceId = (id: string) => {
+    setSelectedDeviceIdState(id);
+  };
+
+  const moveDeviceUp = (id: string) => {
+    setDevices((prev) => {
+      const index = prev.findIndex((device) => device.id === id);
+      return moveDevice(prev, index, index - 1);
+    });
+  };
+
+  const moveDeviceDown = (id: string) => {
+    setDevices((prev) => {
+      const index = prev.findIndex((device) => device.id === id);
+      return moveDevice(prev, index, index + 1);
+    });
+  };
+
+  const selectedDevice = useMemo(() => {
+    return devices.find((device) => device.id === selectedDeviceId) ?? null;
+  }, [devices, selectedDeviceId]);
 
   const value = useMemo(
     () => ({
       devices,
       selectedDeviceId,
+      selectedDevice,
       history,
       addInquiry,
       addDevice,
+      setSelectedDeviceId,
+      moveDeviceUp,
+      moveDeviceDown,
     }),
-    [devices, selectedDeviceId, history]
+    [devices, selectedDeviceId, selectedDevice, history]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

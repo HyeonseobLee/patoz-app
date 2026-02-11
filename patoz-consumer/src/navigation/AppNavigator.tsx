@@ -4,8 +4,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import React from 'react';
 
 import { tabLabels } from '../data/mock';
-import MaintenanceHistoryScreen from '../screens/MaintenanceHistoryScreen';
+import DeviceDashboardScreen from '../screens/DeviceDashboardScreen';
 import HomeScreen from '../screens/HomeScreen';
+import MaintenanceHistoryScreen from '../screens/MaintenanceHistoryScreen';
 import RepairFlowScreen from '../screens/RepairFlowScreen';
 import RepairRequestScreen from '../screens/RepairRequestScreen';
 import { colors } from '../styles/theme';
@@ -31,7 +32,7 @@ export default function AppNavigator() {
             height: 74,
             paddingTop: 8,
             paddingBottom: 10,
-            display: route.name === 'RepairRequest' ? 'none' : 'flex',
+            display: route.name === 'RepairRequest' || route.name === 'DeviceDashboard' ? 'none' : 'flex',
           },
           tabBarIcon: ({ color, size }) => {
             const iconName = iconByRoute[route.name as keyof RootTabParamList];
@@ -51,6 +52,14 @@ export default function AppNavigator() {
           name="RepairRequest"
           options={{
             title: '수리 접수',
+            tabBarButton: () => null,
+          }}
+        />
+        <Tab.Screen
+          component={DeviceDashboardScreen}
+          name="DeviceDashboard"
+          options={{
+            title: '기기 대시보드',
             tabBarButton: () => null,
           }}
         />
