@@ -93,7 +93,7 @@ export default function StoreFinderScreen() {
     <SafeAreaView style={styles.container}>
       <Text style={styles.pageTitle}>매장 찾기</Text>
 
-      <View style={[styles.mapCard, selectedStore ? styles.mapCardCompact : styles.mapCardExpanded]}>
+      <View style={styles.mapCard}>
         <View style={styles.filterRow}>
           <Pressable
             onPress={() => setSalesOnly((prev) => !prev)}
@@ -120,6 +120,9 @@ export default function StoreFinderScreen() {
                 onPress={() => setSelectedStoreId(store.id)}
                 style={[styles.marker, markerPosition, isSelected && styles.markerSelected]}
               >
+                <Text numberOfLines={1} style={[styles.markerLabel, isSelected && styles.markerLabelSelected]}>
+                  {store.name}
+                </Text>
                 <Text style={styles.markerText}>●</Text>
               </Pressable>
             );
@@ -131,21 +134,23 @@ export default function StoreFinderScreen() {
             </View>
           ) : null}
         </View>
-      </View>
 
-      {selectedStore ? (
-        <View style={styles.storeCard}>
-          <Text style={styles.storeName}>{selectedStore.name}</Text>
-          <Text style={styles.storeMeta}>거리 {selectedStore.distanceKm.toFixed(1)}km</Text>
-          <Text style={styles.storeMeta}>판매 가능: {selectedStore.supportsSales ? '가능' : '불가'}</Text>
-          <Text style={styles.storeMeta}>수리 가능: {selectedStore.supportsRepair ? '가능' : '불가'}</Text>
-          <Text style={styles.storeMeta}>연락처: {selectedStore.phone}</Text>
+        <View style={styles.bottomOverlay}>
+          {selectedStore ? (
+            <View style={styles.storeCard}>
+              <Text style={styles.storeName}>{selectedStore.name}</Text>
+              <Text style={styles.storeMeta}>거리 {selectedStore.distanceKm.toFixed(1)}km</Text>
+              <Text style={styles.storeMeta}>판매 가능: {selectedStore.supportsSales ? '가능' : '불가'}</Text>
+              <Text style={styles.storeMeta}>수리 가능: {selectedStore.supportsRepair ? '가능' : '불가'}</Text>
+              <Text style={styles.storeMeta}>연락처: {selectedStore.phone}</Text>
+            </View>
+          ) : (
+            <View style={styles.helperCard}>
+              <Text style={styles.helperText}>마커를 탭하면 매장 상세 정보가 표시됩니다.</Text>
+            </View>
+          )}
         </View>
-      ) : (
-        <View style={styles.helperCard}>
-          <Text style={styles.helperText}>마커를 탭하면 매장 상세 정보가 표시됩니다.</Text>
-        </View>
-      )}
+      </View>
     </SafeAreaView>
   );
 }
@@ -167,15 +172,12 @@ const styles = StyleSheet.create({
     borderColor: colors.borderSoft,
     borderRadius: radius.lg,
     borderWidth: 1,
+    flex: 1,
+    marginBottom: spacing.sm,
     marginHorizontal: spacing.lg,
     marginTop: spacing.md,
     overflow: 'hidden',
-  },
-  mapCardExpanded: {
-    height: 360,
-  },
-  mapCardCompact: {
-    height: 220,
+    position: 'relative',
   },
   filterRow: {
     flexDirection: 'row',
@@ -183,6 +185,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingHorizontal: spacing.sm,
     paddingTop: spacing.sm,
+    zIndex: 2,
   },
   filterButton: {
     backgroundColor: '#E2E8F0',
@@ -203,52 +206,67 @@ const styles = StyleSheet.create({
   },
   mapSurface: {
     backgroundColor: '#EAF2FF',
-    flex: 1,
-    margin: spacing.sm,
+    borderColor: '#BFDBFE',
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: '#BFDBFE',
+    flex: 1,
+    margin: spacing.sm,
+    marginBottom: 88,
     position: 'relative',
   },
   marker: {
     alignItems: 'center',
-    backgroundColor: colors.white,
-    borderColor: '#64748B',
-    borderRadius: 12,
-    borderWidth: 1,
-    height: 24,
-    justifyContent: 'center',
     marginLeft: -12,
     marginTop: -12,
     position: 'absolute',
-    width: 24,
   },
   markerSelected: {
+    zIndex: 3,
+  },
+  markerLabel: {
+    backgroundColor: colors.white,
+    borderColor: '#64748B',
+    borderRadius: 10,
+    borderWidth: 1,
+    color: '#334155',
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 2,
+    maxWidth: 116,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  markerLabelSelected: {
     borderColor: colors.brand,
-    borderWidth: 2,
+    color: colors.brand,
   },
   markerText: {
     color: colors.brand,
-    fontSize: 13,
+    fontSize: 18,
+    lineHeight: 18,
   },
   emptyFilterState: {
     alignItems: 'center',
-    justifyContent: 'center',
     flex: 1,
+    justifyContent: 'center',
   },
   emptyFilterText: {
     color: colors.textMuted,
     fontSize: 13,
     fontWeight: '600',
   },
+  bottomOverlay: {
+    bottom: spacing.sm,
+    left: spacing.sm,
+    position: 'absolute',
+    right: spacing.sm,
+  },
   storeCard: {
-    backgroundColor: colors.white,
+    backgroundColor: 'rgba(255,255,255,0.96)',
     borderColor: colors.borderSoft,
     borderRadius: radius.lg,
     borderWidth: 1,
     gap: spacing.xs,
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.md,
     padding: spacing.md,
   },
   storeName: {
@@ -262,15 +280,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   helperCard: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: 'rgba(238,242,255,0.96)',
     borderRadius: radius.lg,
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.md,
     padding: spacing.md,
   },
   helperText: {
     color: '#3730A3',
     fontSize: 13,
     fontWeight: '600',
+    textAlign: 'center',
   },
 });

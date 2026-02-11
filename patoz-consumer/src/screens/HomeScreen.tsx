@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppContext } from '../context/AppContext';
 import { RootTabParamList } from '../navigation/types';
+import { ServiceStatus } from '../types';
 import { colors, radius, spacing } from '../styles/theme';
 
 type Props = BottomTabScreenProps<RootTabParamList, 'Home'>;
@@ -45,11 +46,11 @@ export default function HomeScreen({ navigation }: Props) {
     navigation.navigate('DeviceDashboard', { deviceId });
   };
 
-  const isRepairHighlighted = (status: string) => {
+  const isRepairHighlighted = (status?: ServiceStatus | null) => {
     return status === 'In-Repair' || status === 'Repair-Finished';
   };
 
-  const getRepairBadgeLabel = (status: string) => {
+  const getRepairBadgeLabel = (status?: ServiceStatus | null) => {
     if (status === 'In-Repair') {
       return '수리 중';
     }
