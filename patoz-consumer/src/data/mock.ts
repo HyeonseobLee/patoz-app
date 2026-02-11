@@ -32,9 +32,9 @@ export const initialDevices: Device[] = [
 ];
 
 export const tabLabels = {
-  home: '홈',
-  repair: '수리 접수',
-  history: '정비 이력',
+  home: '내 기기',
+  storeFinder: '매장 찾기',
+  profile: '내 정보',
 };
 
 export const homeActions = ['AI 간편 점검', '수리 진행 현황', '정비 이력', '도난 신고'] as const;

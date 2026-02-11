@@ -12,10 +12,26 @@ import { ui } from '../styles/ui';
 
 type Props = BottomTabScreenProps<RootTabParamList, 'MaintenanceHistory'>;
 
+type StatusStyle = {
+  badgeBg: string;
+  textColor: string;
+};
+
 const toTimestamp = (date: string) => new Date(date).getTime();
 
-export default function MaintenanceHistoryScreen({ navigation }: Props) {
-  const { history } = useAppContext();
+const statusStyleMap: Record<string, StatusStyle> = {
+  '접수 완료': { badgeBg: '#E5E7EB', textColor: '#4B5563' },
+  '점검 중': { badgeBg: '#DBEAFE', textColor: '#1D4ED8' },
+  '수리 진행 중': { badgeBg: '#FFEDD5', textColor: '#C2410C' },
+  완료: { badgeBg: '#DCFCE7', textColor: '#166534' },
+};
+
+const getStatusStyle = (status: string): StatusStyle => {
+  return statusStyleMap[status] ?? { badgeBg: '#E2E8F0', textColor: '#334155' };
+};
+
+export default function MaintenanceHistoryScreen({ navigation, route }: Props) {
+  const { history, selectedDeviceId } = useAppContext();
   const [, setRefreshKey] = useState(0);
 
   useFocusEffect(
@@ -25,8 +41,12 @@ export default function MaintenanceHistoryScreen({ navigation }: Props) {
     }, [])
   );
 
+  const targetDeviceId = route.params?.deviceId ?? selectedDeviceId;
+
   const sortedHistory = useMemo(() => {
-    return [...history].sort((a, b) => {
+    const filtered = targetDeviceId ? history.filter((item) => item.deviceId === targetDeviceId) : history;
+
+    return [...filtered].sort((a, b) => {
       const aIncomplete = !a.completedDate;
       const bIncomplete = !b.completedDate;
 
@@ -36,46 +56,42 @@ export default function MaintenanceHistoryScreen({ navigation }: Props) {
 
       return toTimestamp(b.receivedDate) - toTimestamp(a.receivedDate);
     });
-  }, [history]);
+  }, [history, targetDeviceId]);
 
   const renderItem = ({ item }: { item: HistoryItem }) => {
-    const isIncomplete = !item.completedDate;
+    const statusStyle = getStatusStyle(item.status);
 
     return (
       <Pressable
         onPress={() => navigation.navigate('MaintenanceDetail', { historyId: item.id })}
-        style={[ui.card, styles.card, isIncomplete && styles.incompleteCard]}
+        style={[ui.card, styles.card]}
       >
-        <View style={styles.topRow}>
-          <Text style={styles.itemTitle}>정비 내역</Text>
-          <View style={[styles.statusBadge, isIncomplete ? styles.statusBadgeActive : styles.statusBadgeNeutral]}>
-            <Text style={[styles.statusText, isIncomplete ? styles.statusTextActive : styles.statusTextNeutral]}>{item.status}</Text>
+        <View style={styles.topRow}>          <Text style={styles.itemTitle}>정비 내역</Text>
+          <View style={[styles.statusBadge, { backgroundColor: statusStyle.badgeBg }]}>            <Text style={[styles.statusText, { color: statusStyle.textColor }]}>{item.status}</Text>
           </View>
         </View>
 
-        <View style={styles.metaBlock}>
-          <Text style={styles.metaLabel}>접수 일자</Text>
+        <View style={styles.metaRow}>          <Text style={styles.metaLabel}>접수</Text>
           <Text style={styles.metaValue}>{item.receivedDate}</Text>
         </View>
-        <View style={styles.metaBlock}>
-          <Text style={styles.metaLabel}>정비 완료 일자</Text>
+        <View style={styles.metaRow}>          <Text style={styles.metaLabel}>완료</Text>
           <Text style={styles.metaValue}>{item.completedDate ?? '진행 중'}</Text>
-        </View>
-        <View style={styles.metaBlock}>
-          <Text style={styles.metaLabel}>정비 진행 상태</Text>
-          <Text style={styles.metaValue}>{item.status}</Text>
         </View>
       </Pressable>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.pageTitle}>정비 이력</Text>
+    <SafeAreaView style={styles.container}>      <Text style={styles.pageTitle}>정비 이력</Text>
       <FlatList
         contentContainerStyle={styles.list}
         data={sortedHistory}
         keyExtractor={(item) => item.id}
+        ListEmptyComponent={
+          <View style={styles.emptyStateCard}>            <Text style={styles.emptyTitle}>선택한 기기의 정비 이력이 없습니다.</Text>
+            <Text style={styles.emptyDescription}>새 정비 접수를 진행하면 이곳에 표시됩니다.</Text>
+          </View>
+        }
         renderItem={renderItem}
       />
     </SafeAreaView>
@@ -95,53 +111,43 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   list: {
-    gap: spacing.lg,
+    gap: spacing.sm,
     paddingBottom: spacing.xl,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.md,
   },
   card: {
-    padding: spacing.lg,
-  },
-  incompleteCard: {
-    backgroundColor: '#F8FAFF',
-    borderColor: colors.brand,
-    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    borderWidth: 1,
+    minHeight: 84,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   topRow: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   itemTitle: {
     color: colors.textPrimary,
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '700',
   },
   statusBadge: {
     borderRadius: 999,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-  },
-  statusBadgeActive: {
-    backgroundColor: '#DBEAFE',
-  },
-  statusBadgeNeutral: {
-    backgroundColor: '#E2E8F0',
+    paddingVertical: 4,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
   },
-  statusTextActive: {
-    color: colors.brand,
-  },
-  statusTextNeutral: {
-    color: '#475569',
-  },
-  metaBlock: {
-    marginTop: spacing.xs,
+  metaRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 2,
   },
   metaLabel: {
     color: colors.textMuted,
@@ -150,8 +156,25 @@ const styles = StyleSheet.create({
   },
   metaValue: {
     color: colors.textPrimary,
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '600',
-    marginTop: 2,
+  },
+  emptyStateCard: {
+    backgroundColor: colors.white,
+    borderColor: colors.borderSoft,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    gap: spacing.xs,
+    marginTop: spacing.md,
+    padding: spacing.lg,
+  },
+  emptyTitle: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  emptyDescription: {
+    color: colors.textMuted,
+    fontSize: 13,
   },
 });

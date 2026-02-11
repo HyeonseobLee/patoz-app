@@ -8,19 +8,30 @@ import DeviceDashboardScreen from '../screens/DeviceDashboardScreen';
 import HomeScreen from '../screens/HomeScreen';
 import MaintenanceDetailScreen from '../screens/MaintenanceDetailScreen';
 import MaintenanceHistoryScreen from '../screens/MaintenanceHistoryScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 import RepairFlowScreen from '../screens/RepairFlowScreen';
 import RepairRequestScreen from '../screens/RepairRequestScreen';
 import RepairStatusScreen from '../screens/RepairStatusScreen';
+import StoreFinderScreen from '../screens/StoreFinderScreen';
 import { colors } from '../styles/theme';
 import { RootTabParamList } from './types';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
 const iconByRoute: Partial<Record<keyof RootTabParamList, keyof typeof Ionicons.glyphMap>> = {
-  Home: 'home-outline',
-  RepairFlow: 'construct-outline',
-  MaintenanceHistory: 'document-text-outline',
+  Home: 'phone-portrait-outline',
+  StoreFinder: 'map-outline',
+  Profile: 'person-outline',
 };
+
+const hiddenRoutes: (keyof RootTabParamList)[] = [
+  'RepairRequest',
+  'DeviceDashboard',
+  'RepairStatus',
+  'MaintenanceDetail',
+  'RepairFlow',
+  'MaintenanceHistory',
+];
 
 export default function AppNavigator() {
   return (
@@ -30,14 +41,27 @@ export default function AppNavigator() {
           headerShown: false,
           tabBarActiveTintColor: colors.brand,
           tabBarInactiveTintColor: '#94A3B8',
+          tabBarHideOnKeyboard: true,
+          tabBarLabelStyle: {
+            fontSize: 12,
+            fontWeight: '600',
+            marginBottom: 2,
+          },
+          tabBarItemStyle: {
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingVertical: 6,
+          },
+          tabBarIconStyle: {
+            marginTop: 2,
+          },
           tabBarStyle: {
-            height: 74,
-            paddingTop: 8,
-            paddingBottom: 10,
-            display:
-              route.name === 'RepairRequest' || route.name === 'DeviceDashboard' || route.name === 'RepairStatus' || route.name === 'MaintenanceDetail'
-                ? 'none'
-                : 'flex',
+            borderTopColor: '#E2E8F0',
+            borderTopWidth: 1,
+            display: hiddenRoutes.includes(route.name) ? 'none' : 'flex',
+            height: 62,
+            paddingBottom: 6,
+            paddingTop: 6,
           },
           tabBarIcon: ({ color, size }) => {
             const iconName = iconByRoute[route.name as keyof RootTabParamList];
@@ -46,13 +70,25 @@ export default function AppNavigator() {
         })}
       >
         <Tab.Screen component={HomeScreen} name="Home" options={{ title: tabLabels.home }} />
-        <Tab.Screen component={RepairFlowScreen} name="RepairFlow" options={{ title: tabLabels.repair }} />
+        <Tab.Screen component={StoreFinderScreen} name="StoreFinder" options={{ title: tabLabels.storeFinder }} />
+        <Tab.Screen component={ProfileScreen} name="Profile" options={{ title: tabLabels.profile }} />
+
+        <Tab.Screen
+          component={RepairFlowScreen}
+          name="RepairFlow"
+          options={{
+            title: 'AI 간편 점검',
+            tabBarButton: () => null,
+          }}
+        />
         <Tab.Screen
           component={MaintenanceHistoryScreen}
           name="MaintenanceHistory"
-          options={{ title: tabLabels.history }}
+          options={{
+            title: '정비 이력',
+            tabBarButton: () => null,
+          }}
         />
-
         <Tab.Screen
           component={MaintenanceDetailScreen}
           name="MaintenanceDetail"
