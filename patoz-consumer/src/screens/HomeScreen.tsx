@@ -1,6 +1,6 @@
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import React, { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import AppHeader from '../components/AppHeader';
 import { useAppContext } from '../context/AppContext';
@@ -71,36 +71,46 @@ export default function HomeScreen({ navigation }: Props) {
         </View>
       ) : (
         <View style={styles.deviceList}>
-          {devices.map((device, index) => (
-            <Pressable key={device.id} onPress={() => handleCardPress(device.id)} style={styles.deviceCard}>
-              <View style={styles.imagePlaceholder} />
-              <View style={styles.cardBody}>
-                <Text style={styles.modelName}>{device.modelName}</Text>
-                <Text style={styles.infoText}>시리얼 넘버: {device.serialNumber}</Text>
-                <Text style={styles.infoText}>등록 연도: {device.registeredYear}</Text>
-                {selectedDeviceId === device.id ? <Text style={styles.selectedTag}>선택된 기기</Text> : null}
-              </View>
+          {devices.map((device, index) => {
+            const isSelected = selectedDeviceId === device.id;
 
-              {isEditMode ? (
-                <View style={styles.orderButtons}>
-                  <Pressable
-                    disabled={index === 0}
-                    onPress={() => moveDeviceUp(device.id)}
-                    style={[styles.orderButton, index === 0 && styles.disabledOrderButton]}
-                  >
-                    <Text style={styles.orderButtonText}>위로</Text>
-                  </Pressable>
-                  <Pressable
-                    disabled={index === devices.length - 1}
-                    onPress={() => moveDeviceDown(device.id)}
-                    style={[styles.orderButton, index === devices.length - 1 && styles.disabledOrderButton]}
-                  >
-                    <Text style={styles.orderButtonText}>아래로</Text>
-                  </Pressable>
+            return (
+              <Pressable
+                key={device.id}
+                onPress={() => handleCardPress(device.id)}
+                style={[styles.deviceCard, isSelected && styles.selectedDeviceCard]}
+              >
+                {device.imageUri ? <Image source={{ uri: device.imageUri }} style={styles.deviceImage} /> : <View style={styles.imagePlaceholder} />}
+                <View style={styles.cardBody}>
+                  <Text style={styles.brandText}>{device.brand}</Text>
+                  <Text style={styles.modelName}>{device.modelName}</Text>
+                  <Text style={styles.infoText}>색상: {device.color}</Text>
+                  <Text style={styles.infoText}>시리얼 넘버: {device.serialNumber}</Text>
+                  <Text style={styles.infoText}>등록 연도: {device.registeredYear}</Text>
+                  {isSelected ? <Text style={styles.selectedTag}>선택된 기기</Text> : null}
                 </View>
-              ) : null}
-            </Pressable>
-          ))}
+
+                {isEditMode ? (
+                  <View style={styles.orderButtons}>
+                    <Pressable
+                      disabled={index === 0}
+                      onPress={() => moveDeviceUp(device.id)}
+                      style={[styles.orderButton, index === 0 && styles.disabledOrderButton]}
+                    >
+                      <Text style={styles.orderButtonText}>위로</Text>
+                    </Pressable>
+                    <Pressable
+                      disabled={index === devices.length - 1}
+                      onPress={() => moveDeviceDown(device.id)}
+                      style={[styles.orderButton, index === devices.length - 1 && styles.disabledOrderButton]}
+                    >
+                      <Text style={styles.orderButtonText}>아래로</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
+              </Pressable>
+            );
+          })}
         </View>
       )}
     </ScrollView>
@@ -221,6 +231,19 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
+  selectedDeviceCard: {
+    borderColor: '#1E3A8A',
+    borderWidth: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  deviceImage: {
+    borderRadius: radius.md,
+    height: 72,
+    width: 72,
+  },
   imagePlaceholder: {
     backgroundColor: '#E2E8F0',
     borderRadius: radius.md,
@@ -230,6 +253,11 @@ const styles = StyleSheet.create({
   cardBody: {
     flex: 1,
     gap: spacing.xs,
+  },
+  brandText: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
   },
   modelName: {
     color: colors.textPrimary,

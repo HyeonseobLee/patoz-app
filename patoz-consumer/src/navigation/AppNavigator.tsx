@@ -9,6 +9,7 @@ import HomeScreen from '../screens/HomeScreen';
 import MaintenanceHistoryScreen from '../screens/MaintenanceHistoryScreen';
 import RepairFlowScreen from '../screens/RepairFlowScreen';
 import RepairRequestScreen from '../screens/RepairRequestScreen';
+import RepairStatusScreen from '../screens/RepairStatusScreen';
 import { colors } from '../styles/theme';
 import { RootTabParamList } from './types';
 
@@ -32,7 +33,10 @@ export default function AppNavigator() {
             height: 74,
             paddingTop: 8,
             paddingBottom: 10,
-            display: route.name === 'RepairRequest' || route.name === 'DeviceDashboard' ? 'none' : 'flex',
+            display:
+              route.name === 'RepairRequest' || route.name === 'DeviceDashboard' || route.name === 'RepairStatus'
+                ? 'none'
+                : 'flex',
           },
           tabBarIcon: ({ color, size }) => {
             const iconName = iconByRoute[route.name as keyof RootTabParamList];
@@ -60,6 +64,14 @@ export default function AppNavigator() {
           name="DeviceDashboard"
           options={{
             title: '기기 대시보드',
+            tabBarButton: () => null,
+          }}
+        />
+        <Tab.Screen
+          component={RepairStatusScreen}
+          name="RepairStatus"
+          options={{
+            title: '수리 진행 현황',
             tabBarButton: () => null,
           }}
         />

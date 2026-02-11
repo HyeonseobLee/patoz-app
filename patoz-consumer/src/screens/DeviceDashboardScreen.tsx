@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import React, { useEffect } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import AppHeader from '../components/AppHeader';
 import { useAppContext } from '../context/AppContext';
@@ -12,10 +12,10 @@ import { colors, radius, spacing } from '../styles/theme';
 type Props = BottomTabScreenProps<RootTabParamList, 'DeviceDashboard'>;
 
 const actionIcons: Record<(typeof homeActions)[number], keyof typeof Ionicons.glyphMap> = {
-  '간단 점검': 'construct-outline',
+  'AI 간편 점검': 'sparkles-outline',
+  '수리 진행 현황': 'build-outline',
   '정비 이력': 'document-text-outline',
   '도난 신고': 'alert-circle-outline',
-  '안전 가이드': 'shield-checkmark-outline',
 };
 
 export default function DeviceDashboardScreen({ navigation, route }: Props) {
@@ -26,8 +26,13 @@ export default function DeviceDashboardScreen({ navigation, route }: Props) {
   }, [route.params.deviceId, setSelectedDeviceId]);
 
   const onActionPress = (action: (typeof homeActions)[number]) => {
-    if (action === '간단 점검') {
+    if (action === 'AI 간편 점검') {
       navigation.navigate('RepairFlow');
+      return;
+    }
+
+    if (action === '수리 진행 현황') {
+      navigation.navigate('RepairStatus');
       return;
     }
 
@@ -48,7 +53,19 @@ export default function DeviceDashboardScreen({ navigation, route }: Props) {
       {fallbackDevice ? (
         <View style={styles.deviceSection}>
           <View style={styles.deviceCard}>
-            <Text style={styles.deviceName}>{fallbackDevice.modelName}</Text>
+            {fallbackDevice.imageUri ? (
+              <Image source={{ uri: fallbackDevice.imageUri }} style={styles.deviceImage} />
+            ) : (
+              <View style={styles.imagePlaceholder} />
+            )}
+
+            <Text style={styles.brandText}>{fallbackDevice.brand}</Text>
+            <Text style={styles.modelName}>{fallbackDevice.modelName}</Text>
+
+            <View style={styles.deviceRow}>
+              <Text style={styles.deviceLabel}>색상</Text>
+              <Text style={styles.deviceValue}>{fallbackDevice.color}</Text>
+            </View>
             <View style={styles.deviceRow}>
               <Text style={styles.deviceLabel}>시리얼 넘버</Text>
               <Text style={styles.deviceValue}>{fallbackDevice.serialNumber}</Text>
@@ -103,11 +120,31 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
-  deviceName: {
-    color: colors.white,
-    fontSize: 26,
-    fontWeight: '800',
+  deviceImage: {
+    borderRadius: radius.lg,
+    height: 170,
     marginBottom: spacing.sm,
+    width: '100%',
+  },
+  imagePlaceholder: {
+    backgroundColor: '#1E293B',
+    borderRadius: radius.lg,
+    height: 170,
+    marginBottom: spacing.sm,
+    width: '100%',
+  },
+  brandText: {
+    color: '#CBD5E1',
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  modelName: {
+    color: colors.white,
+    fontSize: 28,
+    fontWeight: '800',
+    marginBottom: spacing.xs,
   },
   deviceRow: {
     gap: spacing.xs,
@@ -119,7 +156,7 @@ const styles = StyleSheet.create({
   },
   deviceValue: {
     color: colors.white,
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
   },
   emptyStateCard: {
