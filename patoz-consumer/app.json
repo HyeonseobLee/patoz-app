@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "PATOZ",
+    "slug": "patoz",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": false,
+    "splash": {
+      "backgroundColor": "#0E1828",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  }
+}
