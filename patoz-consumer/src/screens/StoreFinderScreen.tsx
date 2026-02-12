@@ -1,6 +1,15 @@
-import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Animated,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
 
 import { colors, radius, spacing } from '../styles/theme';
 
@@ -16,8 +25,8 @@ type Store = {
 };
 
 const defaultRegion = {
-  latitude: 37.548,
-  longitude: 127.0,
+  latitude: 37.5665,
+  longitude: 126.978,
   latitudeDelta: 0.11,
   longitudeDelta: 0.14,
 };
@@ -97,10 +106,104 @@ const isStoreInViewport = (store: Store) => {
   return store.latitude >= latMin && store.latitude <= latMax && store.longitude >= lonMin && store.longitude <= lonMax;
 };
 
+const mapHtml = `
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes" />
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+        background: #dce6ff;
+      }
+      iframe {
+        border: 0;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <iframe
+      src="https://www.openstreetmap.org/export/embed.html?bbox=126.89%2C37.50%2C127.08%2C37.62&layer=mapnik&marker=37.5665%2C126.9780"
+      allowfullscreen
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade"
+    ></iframe>
+  </body>
+</html>`;
+
+function MarkerPin({
+  store,
+  isSelected,
+  onPress,
+}: {
+  store: Store;
+  isSelected: boolean;
+  onPress: () => void;
+}) {
+  const floatAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim, {
+          toValue: 1,
+          duration: 1100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnim, {
+          toValue: 0,
+          duration: 1100,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    loop.start();
+
+    return () => loop.stop();
+  }, [floatAnim]);
+
+  const markerPosition = getMarkerPosition(store);
+  const bubbleTranslateY = floatAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -4],
+  });
+
+  return (
+    <Pressable onPress={onPress} style={[styles.markerWrap, markerPosition]}>
+      <Animated.View
+        style={[
+          styles.markerLabel,
+          isSelected && styles.markerLabelSelected,
+          {
+            transform: [{ translateY: bubbleTranslateY }],
+          },
+        ]}
+      >
+        <Text numberOfLines={1} style={[styles.markerLabelText, isSelected && styles.markerLabelTextSelected]}>
+          {store.name}
+        </Text>
+      </Animated.View>
+
+      <View style={[styles.pinHead, isSelected && styles.pinHeadSelected]} />
+      <View style={[styles.pinTail, isSelected && styles.pinTailSelected]} />
+    </Pressable>
+  );
+}
+
 export default function StoreFinderScreen() {
+  const { width } = useWindowDimensions();
+  const cardScrollRef = useRef<ScrollView | null>(null);
+
   const [salesOnly, setSalesOnly] = useState(false);
   const [repairOnly, setRepairOnly] = useState(false);
-  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
+  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(stores[0]?.id ?? null);
+  const [zoomLevel, setZoomLevel] = useState(13);
 
   const filteredStores = useMemo(() => {
     return stores.filter((store) => {
@@ -120,7 +223,62 @@ export default function StoreFinderScreen() {
     return filteredStores.filter(isStoreInViewport);
   }, [filteredStores]);
 
-  const selectedStore = visibleStores.find((store) => store.id === selectedStoreId) ?? null;
+  const selectedIndex = useMemo(() => {
+    return visibleStores.findIndex((store) => store.id === selectedStoreId);
+  }, [selectedStoreId, visibleStores]);
+
+  useEffect(() => {
+    if (visibleStores.length === 0) {
+      setSelectedStoreId(null);
+      return;
+    }
+
+    const hasSelected = visibleStores.some((store) => store.id === selectedStoreId);
+    if (!hasSelected) {
+      setSelectedStoreId(visibleStores[0].id);
+    }
+  }, [selectedStoreId, visibleStores]);
+
+  const handleStoreSelect = (storeId: string) => {
+    setSelectedStoreId(storeId);
+    const index = visibleStores.findIndex((store) => store.id === storeId);
+
+    if (index >= 0) {
+      cardScrollRef.current?.scrollTo({
+        x: index * (width - spacing.xl * 2 - spacing.sm * 2),
+        animated: true,
+      });
+    }
+  };
+
+  const handleZoom = (direction: 'in' | 'out') => {
+    setZoomLevel((current) => {
+      if (direction === 'in') {
+        return Math.min(18, current + 1);
+      }
+
+      return Math.max(10, current - 1);
+    });
+  };
+
+  const handleMapRegionChange = () => {
+    if (visibleStores.length <= 1) {
+      return;
+    }
+
+    // 향후 실제 지도 이벤트(onMessage 또는 region change) 연동 시,
+    // 현재 viewport에 맞는 매장을 계산해서 해당 카드 인덱스로 scrollTo 할 수 있도록 남겨둔 스켈레톤 코드입니다.
+    const nextIndex = selectedIndex >= 0 ? (selectedIndex + 1) % visibleStores.length : 0;
+    const nextStore = visibleStores[nextIndex];
+
+    if (nextStore) {
+      setSelectedStoreId(nextStore.id);
+      cardScrollRef.current?.scrollTo({
+        x: nextIndex * (width - spacing.xl * 2 - spacing.sm * 2),
+        animated: true,
+      });
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -144,23 +302,45 @@ export default function StoreFinderScreen() {
 
         <View style={styles.contentArea}>
           <View style={styles.mapSurface}>
-            {visibleStores.map((store) => {
-              const markerPosition = getMarkerPosition(store);
-              const isSelected = selectedStoreId === store.id;
+            <WebView
+              originWhitelist={['*']}
+              source={{ html: mapHtml }}
+              style={styles.webView}
+              javaScriptEnabled
+              setBuiltInZoomControls
+              showsVerticalScrollIndicator={false}
+              showsHorizontalScrollIndicator={false}
+              bounces={false}
+              onTouchMove={handleMapRegionChange}
+            />
 
-              return (
-                <Pressable
-                  key={store.id}
-                  onPress={() => setSelectedStoreId(store.id)}
-                  style={[styles.marker, markerPosition, isSelected && styles.markerSelected]}
-                >
-                  <Text numberOfLines={1} style={[styles.markerLabel, isSelected && styles.markerLabelSelected]}>
-                    {store.name}
-                  </Text>
-                  <Text style={styles.markerText}>●</Text>
-                </Pressable>
-              );
-            })}
+            <View pointerEvents="box-none" style={styles.markerLayer}>
+              {visibleStores.map((store) => {
+                const isSelected = selectedStoreId === store.id;
+
+                return (
+                  <MarkerPin
+                    key={store.id}
+                    store={store}
+                    isSelected={isSelected}
+                    onPress={() => handleStoreSelect(store.id)}
+                  />
+                );
+              })}
+            </View>
+
+            <View style={styles.zoomControlWrap}>
+              <Pressable onPress={() => handleZoom('in')} style={styles.zoomButton}>
+                <Text style={styles.zoomButtonText}>+</Text>
+              </Pressable>
+              <Pressable onPress={() => handleZoom('out')} style={[styles.zoomButton, styles.zoomButtonDivider]}>
+                <Text style={styles.zoomButtonText}>−</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.zoomBadge}>
+              <Text style={styles.zoomBadgeText}>Zoom {zoomLevel}</Text>
+            </View>
 
             {visibleStores.length === 0 ? (
               <View style={styles.emptyFilterState}>
@@ -169,21 +349,36 @@ export default function StoreFinderScreen() {
             ) : null}
           </View>
 
-          <View style={styles.infoArea}>
-            {selectedStore ? (
-              <View style={styles.storeCard}>
-                <Text style={styles.storeName}>{selectedStore.name}</Text>
-                <Text style={styles.storeMeta}>거리 {selectedStore.distanceKm.toFixed(1)}km</Text>
-                <Text style={styles.storeMeta}>판매 가능: {selectedStore.supportsSales ? '가능' : '불가'}</Text>
-                <Text style={styles.storeMeta}>수리 가능: {selectedStore.supportsRepair ? '가능' : '불가'}</Text>
-                <Text style={styles.storeMeta}>연락처: {selectedStore.phone}</Text>
-              </View>
-            ) : (
+          <ScrollView
+            horizontal
+            ref={cardScrollRef}
+            showsHorizontalScrollIndicator={false}
+            style={styles.infoArea}
+            contentContainerStyle={styles.storeCardList}
+            scrollEventThrottle={16}
+          >
+            {visibleStores.map((store) => {
+              const isSelected = selectedStoreId === store.id;
+
+              return (
+                <Pressable key={store.id} onPress={() => handleStoreSelect(store.id)} style={styles.storeCardPressable}>
+                  <View style={[styles.storeCard, isSelected && styles.storeCardSelected]}>
+                    <Text style={styles.storeName}>{store.name}</Text>
+                    <Text style={styles.storeMeta}>거리 {store.distanceKm.toFixed(1)}km</Text>
+                    <Text style={styles.storeMeta}>판매 가능: {store.supportsSales ? '가능' : '불가'}</Text>
+                    <Text style={styles.storeMeta}>수리 가능: {store.supportsRepair ? '가능' : '불가'}</Text>
+                    <Text style={styles.storeMeta}>연락처: {store.phone}</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+
+            {visibleStores.length === 0 ? (
               <View style={styles.helperCard}>
-                <Text style={styles.helperText}>마커를 탭하면 매장 상세 정보가 표시됩니다.</Text>
+                <Text style={styles.helperText}>필터를 조정해 인근 매장을 확인해 주세요.</Text>
               </View>
-            )}
-          </View>
+            ) : null}
+          </ScrollView>
         </View>
       </View>
     </SafeAreaView>
@@ -221,71 +416,157 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
   },
   filterButton: {
-    backgroundColor: '#E2E8F0',
+    backgroundColor: colors.borderSoft,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
-    paddingVertical: 6,
+    paddingVertical: spacing.xxs,
   },
   filterButtonActive: {
-    backgroundColor: '#60A5FA',
+    backgroundColor: colors.royalBlueLight,
   },
   filterButtonText: {
-    color: '#334155',
+    color: colors.slate,
     fontSize: 12,
     fontWeight: '700',
   },
   filterButtonTextActive: {
-    color: '#0B1A48',
+    color: colors.brand,
   },
   contentArea: {
     flex: 1,
+    gap: spacing.sm,
     padding: spacing.sm,
     paddingTop: spacing.xs,
   },
   mapSurface: {
-    backgroundColor: '#EAF2FF',
-    borderColor: '#BFDBFE',
+    borderColor: colors.borderSoft,
     borderRadius: radius.md,
     borderWidth: 1,
     flex: 1,
-    minHeight: 200,
+    minHeight: 280,
+    overflow: 'hidden',
     position: 'relative',
   },
-  marker: {
+  webView: {
+    backgroundColor: colors.royalBlueLight,
+    flex: 1,
+  },
+  markerLayer: {
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  markerWrap: {
     alignItems: 'center',
     marginLeft: -12,
-    marginTop: -12,
+    marginTop: -44,
     position: 'absolute',
-  },
-  markerSelected: {
-    zIndex: 3,
   },
   markerLabel: {
     backgroundColor: colors.white,
-    borderColor: '#64748B',
-    borderRadius: 10,
+    borderColor: colors.slateBorder,
+    borderRadius: radius.sm,
     borderWidth: 1,
-    color: '#334155',
-    fontSize: 11,
-    fontWeight: '700',
-    marginBottom: 2,
-    maxWidth: 116,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    marginBottom: spacing.xs,
+    maxWidth: 128,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xxs,
   },
   markerLabelSelected: {
-    borderColor: colors.brand,
-    color: colors.brand,
+    borderColor: colors.royalBlue,
+    shadowColor: colors.brand,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
   },
-  markerText: {
-    color: colors.brand,
+  markerLabelText: {
+    color: colors.slate,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  markerLabelTextSelected: {
+    color: colors.royalBlue,
+  },
+  pinHead: {
+    backgroundColor: colors.royalBlue,
+    borderRadius: radius.round,
+    height: 18,
+    shadowColor: colors.overlay,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    width: 18,
+  },
+  pinHeadSelected: {
+    backgroundColor: colors.royalBlueDark,
+    shadowColor: colors.brand,
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+  },
+  pinTail: {
+    backgroundColor: colors.royalBlue,
+    borderBottomLeftRadius: radius.sm,
+    height: 10,
+    marginTop: -3,
+    transform: [{ rotate: '45deg' }],
+    width: 10,
+  },
+  pinTailSelected: {
+    backgroundColor: colors.royalBlueDark,
+  },
+  zoomControlWrap: {
+    backgroundColor: colors.cardSoft,
+    borderColor: colors.borderSoft,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    bottom: spacing.sm,
+    overflow: 'hidden',
+    position: 'absolute',
+    right: spacing.sm,
+  },
+  zoomButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  zoomButtonDivider: {
+    borderTopColor: colors.borderSoft,
+    borderTopWidth: 1,
+  },
+  zoomButtonText: {
+    color: colors.textPrimary,
     fontSize: 18,
-    lineHeight: 18,
+    fontWeight: '800',
+  },
+  zoomBadge: {
+    backgroundColor: colors.cardSoft,
+    borderColor: colors.borderSoft,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    left: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xxs,
+    position: 'absolute',
+    top: spacing.sm,
+  },
+  zoomBadgeText: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
   },
   emptyFilterState: {
     alignItems: 'center',
-    flex: 1,
+    backgroundColor: colors.cardSoft,
+    borderRadius: radius.md,
     justifyContent: 'center',
+    left: spacing.md,
+    padding: spacing.sm,
+    position: 'absolute',
+    right: spacing.md,
+    top: spacing.md,
   },
   emptyFilterText: {
     color: colors.textMuted,
@@ -293,16 +574,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   infoArea: {
-    marginTop: spacing.sm,
-    minHeight: 120,
+    minHeight: 132,
+  },
+  storeCardList: {
+    gap: spacing.sm,
+    paddingBottom: spacing.xs,
+    paddingRight: spacing.sm,
+  },
+  storeCardPressable: {
+    width: 280,
   },
   storeCard: {
-    backgroundColor: 'rgba(255,255,255,0.96)',
+    backgroundColor: colors.cardSoft,
     borderColor: colors.borderSoft,
     borderRadius: radius.lg,
     borderWidth: 1,
     gap: spacing.xs,
     padding: spacing.md,
+  },
+  storeCardSelected: {
+    borderColor: colors.royalBlue,
   },
   storeName: {
     color: colors.textPrimary,
@@ -315,12 +606,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   helperCard: {
-    backgroundColor: 'rgba(238,242,255,0.96)',
+    backgroundColor: colors.cardHint,
     borderRadius: radius.lg,
+    minWidth: 260,
     padding: spacing.md,
   },
   helperText: {
-    color: '#3730A3',
+    color: colors.indigoHint,
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
