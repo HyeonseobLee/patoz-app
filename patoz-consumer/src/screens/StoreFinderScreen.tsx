@@ -1,13 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Animated,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 
@@ -197,12 +189,11 @@ function MarkerPin({
 }
 
 export default function StoreFinderScreen() {
-  const { width } = useWindowDimensions();
-  const cardScrollRef = useRef<ScrollView | null>(null);
+  const cardSlideAnim = useRef(new Animated.Value(0)).current;
 
   const [salesOnly, setSalesOnly] = useState(false);
   const [repairOnly, setRepairOnly] = useState(false);
-  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(stores[0]?.id ?? null);
+  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(13);
 
   const filteredStores = useMemo(() => {
@@ -223,9 +214,10 @@ export default function StoreFinderScreen() {
     return filteredStores.filter(isStoreInViewport);
   }, [filteredStores]);
 
-  const selectedIndex = useMemo(() => {
-    return visibleStores.findIndex((store) => store.id === selectedStoreId);
-  }, [selectedStoreId, visibleStores]);
+  const selectedStore = useMemo(
+    () => visibleStores.find((store) => store.id === selectedStoreId) ?? null,
+    [selectedStoreId, visibleStores],
+  );
 
   useEffect(() => {
     if (visibleStores.length === 0) {
@@ -235,20 +227,20 @@ export default function StoreFinderScreen() {
 
     const hasSelected = visibleStores.some((store) => store.id === selectedStoreId);
     if (!hasSelected) {
-      setSelectedStoreId(visibleStores[0].id);
+      setSelectedStoreId(null);
     }
   }, [selectedStoreId, visibleStores]);
 
+  useEffect(() => {
+    Animated.timing(cardSlideAnim, {
+      toValue: selectedStore ? 1 : 0,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
+  }, [cardSlideAnim, selectedStore]);
+
   const handleStoreSelect = (storeId: string) => {
     setSelectedStoreId(storeId);
-    const index = visibleStores.findIndex((store) => store.id === storeId);
-
-    if (index >= 0) {
-      cardScrollRef.current?.scrollTo({
-        x: index * (width - spacing.xl * 2 - spacing.sm * 2),
-        animated: true,
-      });
-    }
   };
 
   const handleZoom = (direction: 'in' | 'out') => {
@@ -259,25 +251,6 @@ export default function StoreFinderScreen() {
 
       return Math.max(10, current - 1);
     });
-  };
-
-  const handleMapRegionChange = () => {
-    if (visibleStores.length <= 1) {
-      return;
-    }
-
-    // 향후 실제 지도 이벤트(onMessage 또는 region change) 연동 시,
-    // 현재 viewport에 맞는 매장을 계산해서 해당 카드 인덱스로 scrollTo 할 수 있도록 남겨둔 스켈레톤 코드입니다.
-    const nextIndex = selectedIndex >= 0 ? (selectedIndex + 1) % visibleStores.length : 0;
-    const nextStore = visibleStores[nextIndex];
-
-    if (nextStore) {
-      setSelectedStoreId(nextStore.id);
-      cardScrollRef.current?.scrollTo({
-        x: nextIndex * (width - spacing.xl * 2 - spacing.sm * 2),
-        animated: true,
-      });
-    }
   };
 
   return (
@@ -311,7 +284,6 @@ export default function StoreFinderScreen() {
               showsVerticalScrollIndicator={false}
               showsHorizontalScrollIndicator={false}
               bounces={false}
-              onTouchMove={handleMapRegionChange}
             />
 
             <View pointerEvents="box-none" style={styles.markerLayer}>
@@ -349,36 +321,46 @@ export default function StoreFinderScreen() {
             ) : null}
           </View>
 
-          <ScrollView
-            horizontal
-            ref={cardScrollRef}
-            showsHorizontalScrollIndicator={false}
-            style={styles.infoArea}
-            contentContainerStyle={styles.storeCardList}
-            scrollEventThrottle={16}
-          >
-            {visibleStores.map((store) => {
-              const isSelected = selectedStoreId === store.id;
-
-              return (
-                <Pressable key={store.id} onPress={() => handleStoreSelect(store.id)} style={styles.storeCardPressable}>
-                  <View style={[styles.storeCard, isSelected && styles.storeCardSelected]}>
-                    <Text style={styles.storeName}>{store.name}</Text>
-                    <Text style={styles.storeMeta}>거리 {store.distanceKm.toFixed(1)}km</Text>
-                    <Text style={styles.storeMeta}>판매 가능: {store.supportsSales ? '가능' : '불가'}</Text>
-                    <Text style={styles.storeMeta}>수리 가능: {store.supportsRepair ? '가능' : '불가'}</Text>
-                    <Text style={styles.storeMeta}>연락처: {store.phone}</Text>
-                  </View>
-                </Pressable>
-              );
-            })}
-
-            {visibleStores.length === 0 ? (
+          <View style={styles.infoArea}>
+            {selectedStore ? (
+              <Animated.View
+                style={[
+                  styles.storeCard,
+                  {
+                    opacity: cardSlideAnim,
+                    transform: [
+                      {
+                        translateY: cardSlideAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [26, 0],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              >
+                <Text style={styles.storeName}>{selectedStore.name}</Text>
+                <Text style={styles.storeMeta}>거리 {selectedStore.distanceKm.toFixed(1)}km</Text>
+                <View style={styles.capabilityRow}>
+                  {selectedStore.supportsSales ? (
+                    <View style={styles.capabilityChip}>
+                      <Text style={styles.capabilityChipText}>판매 가능</Text>
+                    </View>
+                  ) : null}
+                  {selectedStore.supportsRepair ? (
+                    <View style={styles.capabilityChip}>
+                      <Text style={styles.capabilityChipText}>수리 가능</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <Text style={styles.storeMeta}>연락처: {selectedStore.phone}</Text>
+              </Animated.View>
+            ) : (
               <View style={styles.helperCard}>
-                <Text style={styles.helperText}>필터를 조정해 인근 매장을 확인해 주세요.</Text>
+                <Text style={styles.helperText}>지도에서 매장을 선택하고 매장정보를 확인해보세요</Text>
               </View>
-            ) : null}
-          </ScrollView>
+            )}
+          </View>
         </View>
       </View>
     </SafeAreaView>
@@ -574,26 +556,32 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   infoArea: {
+    justifyContent: 'flex-end',
     minHeight: 132,
-  },
-  storeCardList: {
-    gap: spacing.sm,
-    paddingBottom: spacing.xs,
-    paddingRight: spacing.sm,
-  },
-  storeCardPressable: {
-    width: 280,
   },
   storeCard: {
     backgroundColor: colors.cardSoft,
-    borderColor: colors.borderSoft,
+    borderColor: colors.royalBlue,
     borderRadius: radius.lg,
     borderWidth: 1,
     gap: spacing.xs,
     padding: spacing.md,
   },
-  storeCardSelected: {
-    borderColor: colors.royalBlue,
+  capabilityRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  capabilityChip: {
+    backgroundColor: colors.royalBlueLight,
+    borderRadius: radius.round,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
+  },
+  capabilityChipText: {
+    color: colors.royalBlueDark,
+    fontSize: 12,
+    fontWeight: '700',
   },
   storeName: {
     color: colors.textPrimary,
